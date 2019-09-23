@@ -68,7 +68,7 @@ type alias Model =
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
-    , canvasSize : Dimensions
+    , canvasSize : Maybe Dimensions
     , screenSize : Maybe Dimensions
     }
 
@@ -79,7 +79,7 @@ init _ =
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
-      , canvasSize = { width = (getGridDimensions tileMap).width * 32, height = (getGridDimensions tileMap).height * 32 }
+      , canvasSize = Nothing
       , screenSize = Nothing
       }
     , Task.perform (\{ viewport } -> ScreenSize (round viewport.width) (round viewport.height)) getViewport
@@ -117,15 +117,18 @@ update msg model =
 
                 tall =
                     h // model.gridDimensions.height
-            in
-            ( { model
-                | screenSize = Just { width = w, height = h }
-                , tileSize =
+
+                size =
                     if wide * model.gridDimensions.height < w then
                         wide
 
                     else
                         tall
+            in
+            ( { model
+                | screenSize = Just { width = w, height = h }
+                , canvasSize = Just { width = (getGridDimensions tileMap).width * size, height = (getGridDimensions tileMap).height * size }
+                , tileSize = size
               }
             , Cmd.none
             )
@@ -218,12 +221,13 @@ renderMap model =
 
 view : Model -> Html Msg
 view model =
-    case model.screenSize of
+    case model.canvasSize of
         Just dimensions ->
             div
                 [ style "display" "flex"
                 , style "justify-content" "center"
                 , style "align-items" "center"
+                , style "background" "black"
                 ]
                 [ Canvas.toHtml
                     ( dimensions.width, dimensions.height )

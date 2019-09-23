@@ -5160,10 +5160,7 @@ var elm$core$Basics$round = _Basics_round;
 var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
 		{
-			canvasSize: {
-				height: author$project$Main$getGridDimensions(author$project$Main$tileMap).height * 32,
-				width: author$project$Main$getGridDimensions(author$project$Main$tileMap).width * 32
-			},
+			canvasSize: elm$core$Maybe$Nothing,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
 			pos: {angle: 0, x: 0, y: 0},
@@ -5645,13 +5642,19 @@ var author$project$Main$update = F2(
 				var h = msg.b;
 				var wide = (w / model.gridDimensions.width) | 0;
 				var tall = (h / model.gridDimensions.height) | 0;
+				var size = (_Utils_cmp(wide * model.gridDimensions.height, w) < 0) ? wide : tall;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
+							canvasSize: elm$core$Maybe$Just(
+								{
+									height: author$project$Main$getGridDimensions(author$project$Main$tileMap).height * size,
+									width: author$project$Main$getGridDimensions(author$project$Main$tileMap).width * size
+								}),
 							screenSize: elm$core$Maybe$Just(
 								{height: h, width: w}),
-							tileSize: (_Utils_cmp(wide * model.gridDimensions.height, w) < 0) ? wide : tall
+							tileSize: size
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
@@ -5877,7 +5880,7 @@ var elm$core$List$concat = function (lists) {
 var author$project$Main$renderMap = function (model) {
 	var partialMakeTile = A3(
 		author$project$Main$makeTile,
-		0.5,
+		1,
 		{angle: 0, x: 0, y: 0},
 		model);
 	return A2(
@@ -6610,7 +6613,7 @@ var joakin$elm_canvas$Canvas$toHtml = F3(
 			entities);
 	});
 var author$project$Main$view = function (model) {
-	var _n0 = model.screenSize;
+	var _n0 = model.canvasSize;
 	if (_n0.$ === 'Just') {
 		var dimensions = _n0.a;
 		return A2(
@@ -6619,7 +6622,8 @@ var author$project$Main$view = function (model) {
 				[
 					A2(elm$html$Html$Attributes$style, 'display', 'flex'),
 					A2(elm$html$Html$Attributes$style, 'justify-content', 'center'),
-					A2(elm$html$Html$Attributes$style, 'align-items', 'center')
+					A2(elm$html$Html$Attributes$style, 'align-items', 'center'),
+					A2(elm$html$Html$Attributes$style, 'background', 'black')
 				]),
 			_List_fromArray(
 				[
