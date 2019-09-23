@@ -6,6 +6,7 @@ import Browser.Events exposing (onKeyDown, onResize)
 import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Advanced exposing (..)
+import Canvas.Settings.Line exposing (..)
 import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
@@ -64,7 +65,9 @@ getGridDimensions grid =
 
 
 type alias Model =
-    { playerPos : Maybe Position
+    { playerPos : Position
+    , playerVel : Float
+    , playerRotVel : Float
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
@@ -75,7 +78,9 @@ type alias Model =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { playerPos = Nothing
+    ( { playerPos = { x = 0, y = 0, angle = 0 }
+      , playerVel = 5
+      , playerRotVel = 5
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -94,6 +99,7 @@ type Msg
     = TurnLeft
     | TurnRight
     | MoveForward
+    | MoveBackward
     | Other
     | ScreenSize Int Int
 
@@ -151,15 +157,22 @@ indiciesOfGrid num grid =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        ( dx, dy ) =
+            fromPolar ( model.playerVel, degrees model.playerPos.angle )
+    in
     case msg of
         TurnLeft ->
-            ( model, Cmd.none )
+            ( { model | playerPos = { x = model.playerPos.x, y = model.playerPos.y, angle = model.playerPos.angle - model.playerRotVel } }, Cmd.none )
 
         TurnRight ->
-            ( model, Cmd.none )
+            ( { model | playerPos = { x = model.playerPos.x, y = model.playerPos.y, angle = model.playerPos.angle + model.playerRotVel } }, Cmd.none )
 
         MoveForward ->
-            ( model, Cmd.none )
+            ( { model | playerPos = { x = model.playerPos.x + dx, y = model.playerPos.y + dy, angle = model.playerPos.angle } }, Cmd.none )
+
+        MoveBackward ->
+            ( { model | playerPos = { x = model.playerPos.x - dx, y = model.playerPos.y - dy, angle = model.playerPos.angle } }, Cmd.none )
 
         ScreenSize w h ->
             let
@@ -186,7 +199,12 @@ update msg model =
                 | screenSize = Just { width = w, height = h }
                 , canvasSize = Just { width = (getGridDimensions tileMap).width * size, height = (getGridDimensions tileMap).height * size }
                 , tileSize = size
-                , playerPos = Just { x = toFloat (xZeroed * size + halfSize), y = toFloat (yZeroed * size + halfSize), angle = 0 }
+                , playerPos =
+                    if model.playerPos == { x = 0, y = 0, angle = 0 } then
+                        { x = toFloat (xZeroed * size + halfSize), y = toFloat (yZeroed * size + halfSize), angle = 0 }
+
+                    else
+                        model.playerPos
               }
             , Cmd.none
             )
@@ -223,6 +241,9 @@ toDirection string =
 
         "ArrowUp" ->
             MoveForward
+
+        "ArrowDown" ->
+            MoveBackward
 
         _ ->
             Other
@@ -276,13 +297,26 @@ renderMap model =
 
 renderPlayer : Model -> List Renderable
 renderPlayer model =
-    case model.playerPos of
-        Just pos ->
-            [ shapes [ fill Color.blue ] [ circle ( pos.x, pos.y ) (toFloat model.tileSize / 3) ]
-            ]
+    let
+        lineLength =
+            100
 
-        Nothing ->
-            []
+        ( dx, dy ) =
+            fromPolar ( lineLength, degrees model.playerPos.angle )
+    in
+    [ shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) (toFloat model.tileSize / 3) ]
+    , shapes
+        [ stroke Color.blue
+        , lineWidth 5
+        ]
+        [ path ( model.playerPos.x, model.playerPos.y )
+            [ lineTo
+                ( model.playerPos.x + dx
+                , model.playerPos.y + dy
+                )
+            ]
+        ]
+    ]
 
 
 view : Model -> Html Msg

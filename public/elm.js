@@ -5163,7 +5163,9 @@ var author$project$Main$init = function (_n0) {
 			canvasSize: elm$core$Maybe$Nothing,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
-			playerPos: elm$core$Maybe$Nothing,
+			playerPos: {angle: 0, x: 0, y: 0},
+			playerRotVel: 5,
+			playerVel: 5,
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32
 		},
@@ -5178,6 +5180,7 @@ var author$project$Main$init = function (_n0) {
 			},
 			elm$browser$Browser$Dom$getViewport));
 };
+var author$project$Main$MoveBackward = {$: 'MoveBackward'};
 var author$project$Main$MoveForward = {$: 'MoveForward'};
 var author$project$Main$Other = {$: 'Other'};
 var author$project$Main$TurnLeft = {$: 'TurnLeft'};
@@ -5190,6 +5193,8 @@ var author$project$Main$toDirection = function (string) {
 			return author$project$Main$TurnRight;
 		case 'ArrowUp':
 			return author$project$Main$MoveForward;
+		case 'ArrowDown':
+			return author$project$Main$MoveBackward;
 		default:
 			return author$project$Main$Other;
 	}
@@ -5810,17 +5815,62 @@ var author$project$Main$indiciesOfGrid = F2(
 			elm$core$List$concat(grid));
 		return (i < 0) ? _Utils_Tuple2(-1, -1) : A2(author$project$Main$get2DIndiciesFrom1DList, width, i);
 	});
+var elm$core$Basics$pi = _Basics_pi;
+var elm$core$Basics$degrees = function (angleInDegrees) {
+	return (angleInDegrees * elm$core$Basics$pi) / 180;
+};
+var elm$core$Basics$cos = _Basics_cos;
+var elm$core$Basics$sin = _Basics_sin;
+var elm$core$Basics$fromPolar = function (_n0) {
+	var radius = _n0.a;
+	var theta = _n0.b;
+	return _Utils_Tuple2(
+		radius * elm$core$Basics$cos(theta),
+		radius * elm$core$Basics$sin(theta));
+};
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
 	function (msg, model) {
+		var _n0 = elm$core$Basics$fromPolar(
+			_Utils_Tuple2(
+				model.playerVel,
+				elm$core$Basics$degrees(model.playerPos.angle)));
+		var dx = _n0.a;
+		var dy = _n0.b;
 		switch (msg.$) {
 			case 'TurnLeft':
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							playerPos: {angle: model.playerPos.angle - model.playerRotVel, x: model.playerPos.x, y: model.playerPos.y}
+						}),
+					elm$core$Platform$Cmd$none);
 			case 'TurnRight':
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							playerPos: {angle: model.playerPos.angle + model.playerRotVel, x: model.playerPos.x, y: model.playerPos.y}
+						}),
+					elm$core$Platform$Cmd$none);
 			case 'MoveForward':
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							playerPos: {angle: model.playerPos.angle, x: model.playerPos.x + dx, y: model.playerPos.y + dy}
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'MoveBackward':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							playerPos: {angle: model.playerPos.angle, x: model.playerPos.x - dx, y: model.playerPos.y - dy}
+						}),
+					elm$core$Platform$Cmd$none);
 			case 'ScreenSize':
 				var w = msg.a;
 				var h = msg.b;
@@ -5828,9 +5878,9 @@ var author$project$Main$update = F2(
 				var tall = (h / model.gridDimensions.height) | 0;
 				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
 				var halfSize = (size / 2) | 0;
-				var _n1 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
-				var xZeroed = _n1.a;
-				var yZeroed = _n1.b;
+				var _n2 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
+				var xZeroed = _n2.a;
+				var yZeroed = _n2.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -5840,8 +5890,9 @@ var author$project$Main$update = F2(
 									height: author$project$Main$getGridDimensions(author$project$Main$tileMap).height * size,
 									width: author$project$Main$getGridDimensions(author$project$Main$tileMap).width * size
 								}),
-							playerPos: elm$core$Maybe$Just(
-								{angle: 0, x: (xZeroed * size) + halfSize, y: (yZeroed * size) + halfSize}),
+							playerPos: _Utils_eq(
+								model.playerPos,
+								{angle: 0, x: 0, y: 0}) ? {angle: 0, x: (xZeroed * size) + halfSize, y: (yZeroed * size) + halfSize} : model.playerPos,
 							screenSize: elm$core$Maybe$Just(
 								{height: h, width: w}),
 							tileSize: size
@@ -6076,29 +6127,104 @@ var joakin$elm_canvas$Canvas$circle = F2(
 	function (pos, radius) {
 		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Circle, pos, radius);
 	});
+var joakin$elm_canvas$Canvas$Internal$Canvas$LineTo = function (a) {
+	return {$: 'LineTo', a: a};
+};
+var joakin$elm_canvas$Canvas$lineTo = function (point) {
+	return joakin$elm_canvas$Canvas$Internal$Canvas$LineTo(point);
+};
+var joakin$elm_canvas$Canvas$Internal$Canvas$Path = F2(
+	function (a, b) {
+		return {$: 'Path', a: a, b: b};
+	});
+var joakin$elm_canvas$Canvas$path = F2(
+	function (startingPoint, segments) {
+		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
+	});
+var joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
+	return {$: 'SettingCommand', a: a};
+};
+var elm$json$Json$Encode$float = _Json_wrap;
+var elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n0, obj) {
+					var k = _n0.a;
+					var v = _n0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var elm$json$Json$Encode$string = _Json_wrap;
+var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
+	function (name, value) {
+		return elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'type',
+					elm$json$Json$Encode$string('field')),
+					_Utils_Tuple2(
+					'name',
+					elm$json$Json$Encode$string(name)),
+					_Utils_Tuple2('value', value)
+				]));
+	});
+var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$lineWidth = function (value) {
+	return A2(
+		joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
+		'lineWidth',
+		elm$json$Json$Encode$float(value));
+};
+var joakin$elm_canvas$Canvas$Settings$Line$lineWidth = function (width) {
+	return joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
+		joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$lineWidth(width));
+};
 var author$project$Main$renderPlayer = function (model) {
-	var _n0 = model.playerPos;
-	if (_n0.$ === 'Just') {
-		var pos = _n0.a;
-		return _List_fromArray(
-			[
-				A2(
-				joakin$elm_canvas$Canvas$shapes,
-				_List_fromArray(
-					[
-						joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$blue)
-					]),
-				_List_fromArray(
-					[
-						A2(
-						joakin$elm_canvas$Canvas$circle,
-						_Utils_Tuple2(pos.x, pos.y),
-						model.tileSize / 3)
-					]))
-			]);
-	} else {
-		return _List_Nil;
-	}
+	var lineLength = 100;
+	var _n0 = elm$core$Basics$fromPolar(
+		_Utils_Tuple2(
+			lineLength,
+			elm$core$Basics$degrees(model.playerPos.angle)));
+	var dx = _n0.a;
+	var dy = _n0.b;
+	return _List_fromArray(
+		[
+			A2(
+			joakin$elm_canvas$Canvas$shapes,
+			_List_fromArray(
+				[
+					joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$blue)
+				]),
+			_List_fromArray(
+				[
+					A2(
+					joakin$elm_canvas$Canvas$circle,
+					_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
+					model.tileSize / 3)
+				])),
+			A2(
+			joakin$elm_canvas$Canvas$shapes,
+			_List_fromArray(
+				[
+					joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$blue),
+					joakin$elm_canvas$Canvas$Settings$Line$lineWidth(5)
+				]),
+			_List_fromArray(
+				[
+					A2(
+					joakin$elm_canvas$Canvas$path,
+					_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
+					_List_fromArray(
+						[
+							joakin$elm_canvas$Canvas$lineTo(
+							_Utils_Tuple2(model.playerPos.x + dx, model.playerPos.y + dy))
+						]))
+				]))
+		]);
 };
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
@@ -6122,9 +6248,6 @@ var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 var elm$html$Html$Keyed$node = elm$virtual_dom$VirtualDom$keyedNode;
 var elm$html$Html$canvas = _VirtualDom_node('canvas');
 var joakin$elm_canvas$Canvas$cnvs = A2(elm$html$Html$canvas, _List_Nil, _List_Nil);
-var elm$core$Basics$cos = _Basics_cos;
-var elm$core$Basics$sin = _Basics_sin;
-var elm$json$Json$Encode$float = _Json_wrap;
 var elm$json$Json$Encode$list = F2(
 	function (func, entries) {
 		return _Json_wrap(
@@ -6134,20 +6257,6 @@ var elm$json$Json$Encode$list = F2(
 				_Json_emptyArray(_Utils_Tuple0),
 				entries));
 	});
-var elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			elm$core$List$foldl,
-			F2(
-				function (_n0, obj) {
-					var k = _n0.a;
-					var v = _n0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var elm$json$Json$Encode$string = _Json_wrap;
 var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fn = F2(
 	function (name, args) {
 		return elm$json$Json$Encode$object(
@@ -6302,7 +6411,6 @@ var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$arc = F6(
 					elm$json$Json$Encode$bool(anticlockwise)
 				]));
 	});
-var elm$core$Basics$pi = _Basics_pi;
 var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$circle = F3(
 	function (x, y, r) {
 		return A6(joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$arc, x, y, r, 0, 2 * elm$core$Basics$pi, false);
@@ -6432,20 +6540,6 @@ var avh4$elm_color$Color$toCssString = function (_n0) {
 				')'
 			]));
 };
-var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field = F2(
-	function (name, value) {
-		return elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'type',
-					elm$json$Json$Encode$string('field')),
-					_Utils_Tuple2(
-					'name',
-					elm$json$Json$Encode$string(name)),
-					_Utils_Tuple2('value', value)
-				]));
-	});
 var joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$fillStyle = function (color) {
 	return A2(
 		joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$field,
