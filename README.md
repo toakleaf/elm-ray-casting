@@ -1,6 +1,6 @@
 # Elm Raycasting
 
-Raycasting a 2D map to 3D, ala Wolfenstein 3D, in a functional Elm way.
+Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HTML5 Canvas
 
 ## Todo:
 
