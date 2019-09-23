@@ -5767,6 +5767,7 @@ var author$project$Main$clearScreen = F2(
 					height)
 				]));
 	});
+var avh4$elm_color$Color$red = A4(avh4$elm_color$Color$RgbaSpace, 204 / 255, 0 / 255, 0 / 255, 1.0);
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
@@ -6511,7 +6512,21 @@ var author$project$Main$view = function (_n0) {
 					_List_Nil,
 					_List_fromArray(
 						[
-							A2(author$project$Main$clearScreen, dimensions.width, dimensions.height)
+							A2(author$project$Main$clearScreen, dimensions.width, dimensions.height),
+							A2(
+							joakin$elm_canvas$Canvas$shapes,
+							_List_fromArray(
+								[
+									joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$red)
+								]),
+							_List_fromArray(
+								[
+									A3(
+									joakin$elm_canvas$Canvas$rect,
+									_Utils_Tuple2(30, 30),
+									200,
+									200)
+								]))
 						]))
 				]));
 	} else {

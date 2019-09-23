@@ -31,23 +31,26 @@ type alias Dimensions =
     { width : Int, height : Int }
 
 
-type alias Model =
+type alias Position =
     { x : Int
     , y : Int
+    , angle : Float
+    }
+
+
+type alias Model =
+    { pos : Position
     , grid : Dimensions
-    , cellSize : Int
-    , gridMargin : { top : Int, right : Int, bottom : Int, left : Int }
+    , tileSize : Int
     , screen : Maybe Dimensions
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { x = 0
-      , y = 0
+    ( { pos = { x = 0, y = 0, angle = 0 }
       , grid = { width = 5, height = 5 }
-      , cellSize = 200
-      , gridMargin = { top = 20, right = 0, bottom = 80, left = 0 }
+      , tileSize = 200
       , screen = Nothing
       }
     , Task.perform (\{ viewport } -> ScreenSize (round viewport.width) (round viewport.height)) getViewport
@@ -72,15 +75,12 @@ update msg model =
         TurnLeft ->
             ( model, Cmd.none )
 
-        -- ( { model | facing = cycleNextItem (List.reverse clockwiseDirections) model.facing }, Cmd.none )
         TurnRight ->
             ( model, Cmd.none )
 
-        -- ( { model | facing = cycleNextItem clockwiseDirections model.facing }, Cmd.none )
         MoveForward ->
             ( model, Cmd.none )
 
-        -- ( move model, Cmd.none )
         ScreenSize w h ->
             ( { model | screen = Just { width = w, height = h } }
             , Cmd.none
@@ -145,6 +145,7 @@ view { screen } =
                     ( dimensions.width, dimensions.height )
                     []
                     [ clearScreen (toFloat dimensions.width) (toFloat dimensions.height)
+                    , shapes [ fill Color.red ] [ rect ( 30, 30 ) 200 200 ]
                     ]
                 ]
 
