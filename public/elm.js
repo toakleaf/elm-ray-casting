@@ -5165,7 +5165,7 @@ var author$project$Main$init = function (_n0) {
 				width: author$project$Main$getGridDimensions(author$project$Main$tileMap).width * 32
 			},
 			grid: author$project$Main$tileMap,
-			gridSize: author$project$Main$getGridDimensions(author$project$Main$tileMap),
+			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
 			pos: {angle: 0, x: 0, y: 0},
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32
@@ -5643,12 +5643,15 @@ var author$project$Main$update = F2(
 			case 'ScreenSize':
 				var w = msg.a;
 				var h = msg.b;
+				var wide = (w / model.gridDimensions.width) | 0;
+				var tall = (h / model.gridDimensions.height) | 0;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							screenSize: elm$core$Maybe$Just(
-								{height: h, width: w})
+								{height: h, width: w}),
+							tileSize: (_Utils_cmp(wide * model.gridDimensions.height, w) < 0) ? wide : tall
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
@@ -5826,26 +5829,13 @@ var author$project$Main$clearScreen = F2(
 var avh4$elm_color$Color$blue = A4(avh4$elm_color$Color$RgbaSpace, 52 / 255, 101 / 255, 164 / 255, 1.0);
 var avh4$elm_color$Color$red = A4(avh4$elm_color$Color$RgbaSpace, 204 / 255, 0 / 255, 0 / 255, 1.0);
 var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
-var elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
-		}
-	});
-var elm$core$List$concat = function (lists) {
-	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
-};
 var joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 	return joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
 		joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
 };
-var author$project$Main$makeTile = F3(
-	function (model, i, tileType) {
-		var row = (i / model.gridSize.width) | 0;
-		var length = elm$core$List$length(
-			elm$core$List$concat(model.grid));
+var author$project$Main$makeTile = F5(
+	function (scale, offset, model, index, tileType) {
+		var row = (index / model.gridDimensions.width) | 0;
 		var fillColor = function () {
 			switch (tileType) {
 				case 0:
@@ -5856,7 +5846,7 @@ var author$project$Main$makeTile = F3(
 					return avh4$elm_color$Color$blue;
 			}
 		}();
-		var col = i - (row * model.gridSize.width);
+		var col = index - (row * model.gridDimensions.width);
 		return A2(
 			joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
@@ -5868,13 +5858,28 @@ var author$project$Main$makeTile = F3(
 				[
 					A3(
 					joakin$elm_canvas$Canvas$rect,
-					_Utils_Tuple2(col * model.tileSize, row * model.tileSize),
-					model.tileSize,
-					model.tileSize)
+					_Utils_Tuple2((scale * (col * model.tileSize)) + offset.x, (scale * (row * model.tileSize)) + offset.y),
+					scale * model.tileSize,
+					scale * model.tileSize)
 				]));
 	});
+var elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
+		}
+	});
+var elm$core$List$concat = function (lists) {
+	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
+};
 var author$project$Main$renderMap = function (model) {
-	var partialMakeTile = author$project$Main$makeTile(model);
+	var partialMakeTile = A3(
+		author$project$Main$makeTile,
+		0.5,
+		{angle: 0, x: 0, y: 0},
+		model);
 	return A2(
 		elm$core$List$indexedMap,
 		partialMakeTile,

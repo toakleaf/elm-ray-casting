@@ -66,7 +66,7 @@ getGridDimensions grid =
 type alias Model =
     { pos : Position
     , grid : Grid
-    , gridSize : Dimensions
+    , gridDimensions : Dimensions
     , tileSize : Int
     , canvasSize : Dimensions
     , screenSize : Maybe Dimensions
@@ -77,7 +77,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { pos = { x = 0, y = 0, angle = 0 }
       , grid = tileMap
-      , gridSize = getGridDimensions tileMap
+      , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
       , canvasSize = { width = (getGridDimensions tileMap).width * 32, height = (getGridDimensions tileMap).height * 32 }
       , screenSize = Nothing
@@ -111,7 +111,22 @@ update msg model =
             ( model, Cmd.none )
 
         ScreenSize w h ->
-            ( { model | screenSize = Just { width = w, height = h } }
+            let
+                wide =
+                    w // model.gridDimensions.width
+
+                tall =
+                    h // model.gridDimensions.height
+            in
+            ( { model
+                | screenSize = Just { width = w, height = h }
+                , tileSize =
+                    if wide * model.gridDimensions.height < w then
+                        wide
+
+                    else
+                        tall
+              }
             , Cmd.none
             )
 
@@ -161,8 +176,8 @@ clearScreen width height =
     shapes [ fill Color.black ] [ rect ( 0, 0 ) width height ]
 
 
-makeTile : Model -> Int -> Int -> Renderable
-makeTile model i tileType =
+makeTile : Float -> Position -> Model -> Int -> Int -> Renderable
+makeTile scale offset model index tileType =
     let
         fillColor =
             case tileType of
@@ -175,23 +190,28 @@ makeTile model i tileType =
                 _ ->
                     Color.blue
 
-        length =
-            List.concat model.grid |> List.length
-
         row =
-            i // model.gridSize.width
+            index // model.gridDimensions.width
 
         col =
-            i - row * model.gridSize.width
+            index - row * model.gridDimensions.width
     in
-    shapes [ fill fillColor, stroke Color.black ] [ rect ( toFloat (col * model.tileSize), toFloat (row * model.tileSize) ) (toFloat model.tileSize) (toFloat model.tileSize) ]
+    shapes
+        [ fill fillColor, stroke Color.black ]
+        [ rect
+            ( scale * toFloat (col * model.tileSize) + toFloat offset.x
+            , scale * toFloat (row * model.tileSize) + toFloat offset.y
+            )
+            (scale * toFloat model.tileSize)
+            (scale * toFloat model.tileSize)
+        ]
 
 
 renderMap : Model -> List Renderable
 renderMap model =
     let
         partialMakeTile =
-            makeTile model
+            makeTile 1 { x = 0, y = 0, angle = 0 } model
     in
     List.concat model.grid |> List.indexedMap partialMakeTile
 
