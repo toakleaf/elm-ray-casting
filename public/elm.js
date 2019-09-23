@@ -5163,7 +5163,7 @@ var author$project$Main$init = function (_n0) {
 			canvasSize: elm$core$Maybe$Nothing,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
-			pos: {angle: 0, x: 0, y: 0},
+			playerPos: elm$core$Maybe$Nothing,
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32
 		},
@@ -5626,6 +5626,190 @@ var author$project$Main$subscriptions = function (model) {
 				elm$browser$Browser$Events$onResize(author$project$Main$ScreenSize)
 			]));
 };
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var author$project$Main$get2DIndiciesFrom1DList = F2(
+	function (width, index) {
+		var row = (index / width) | 0;
+		var col = index - (row * width);
+		return ((width < 0) || (index < 0)) ? _Utils_Tuple2(-1, -1) : _Utils_Tuple2(col, row);
+	});
+var author$project$Main$indexOfInt = F2(
+	function (num, list) {
+		var helper = F3(
+			function (li, elem, offset) {
+				helper:
+				while (true) {
+					if (!li.b) {
+						return -1;
+					} else {
+						var x = li.a;
+						var xs = li.b;
+						if (_Utils_eq(x, elem)) {
+							return offset;
+						} else {
+							var $temp$li = xs,
+								$temp$elem = elem,
+								$temp$offset = offset + 1;
+							li = $temp$li;
+							elem = $temp$elem;
+							offset = $temp$offset;
+							continue helper;
+						}
+					}
+				}
+			});
+		return A3(helper, list, num, 0);
+	});
+var elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
+		}
+	});
+var elm$core$List$concat = function (lists) {
+	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
+};
+var elm$core$List$takeReverse = F3(
+	function (n, list, kept) {
+		takeReverse:
+		while (true) {
+			if (n <= 0) {
+				return kept;
+			} else {
+				if (!list.b) {
+					return kept;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs,
+						$temp$kept = A2(elm$core$List$cons, x, kept);
+					n = $temp$n;
+					list = $temp$list;
+					kept = $temp$kept;
+					continue takeReverse;
+				}
+			}
+		}
+	});
+var elm$core$List$takeTailRec = F2(
+	function (n, list) {
+		return elm$core$List$reverse(
+			A3(elm$core$List$takeReverse, n, list, _List_Nil));
+	});
+var elm$core$List$takeFast = F3(
+	function (ctr, n, list) {
+		if (n <= 0) {
+			return _List_Nil;
+		} else {
+			var _n0 = _Utils_Tuple2(n, list);
+			_n0$1:
+			while (true) {
+				_n0$5:
+				while (true) {
+					if (!_n0.b.b) {
+						return list;
+					} else {
+						if (_n0.b.b.b) {
+							switch (_n0.a) {
+								case 1:
+									break _n0$1;
+								case 2:
+									var _n2 = _n0.b;
+									var x = _n2.a;
+									var _n3 = _n2.b;
+									var y = _n3.a;
+									return _List_fromArray(
+										[x, y]);
+								case 3:
+									if (_n0.b.b.b.b) {
+										var _n4 = _n0.b;
+										var x = _n4.a;
+										var _n5 = _n4.b;
+										var y = _n5.a;
+										var _n6 = _n5.b;
+										var z = _n6.a;
+										return _List_fromArray(
+											[x, y, z]);
+									} else {
+										break _n0$5;
+									}
+								default:
+									if (_n0.b.b.b.b && _n0.b.b.b.b.b) {
+										var _n7 = _n0.b;
+										var x = _n7.a;
+										var _n8 = _n7.b;
+										var y = _n8.a;
+										var _n9 = _n8.b;
+										var z = _n9.a;
+										var _n10 = _n9.b;
+										var w = _n10.a;
+										var tl = _n10.b;
+										return (ctr > 1000) ? A2(
+											elm$core$List$cons,
+											x,
+											A2(
+												elm$core$List$cons,
+												y,
+												A2(
+													elm$core$List$cons,
+													z,
+													A2(
+														elm$core$List$cons,
+														w,
+														A2(elm$core$List$takeTailRec, n - 4, tl))))) : A2(
+											elm$core$List$cons,
+											x,
+											A2(
+												elm$core$List$cons,
+												y,
+												A2(
+													elm$core$List$cons,
+													z,
+													A2(
+														elm$core$List$cons,
+														w,
+														A3(elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
+									} else {
+										break _n0$5;
+									}
+							}
+						} else {
+							if (_n0.a === 1) {
+								break _n0$1;
+							} else {
+								break _n0$5;
+							}
+						}
+					}
+				}
+				return list;
+			}
+			var _n1 = _n0.b;
+			var x = _n1.a;
+			return _List_fromArray(
+				[x]);
+		}
+	});
+var elm$core$List$take = F2(
+	function (n, list) {
+		return A3(elm$core$List$takeFast, 0, n, list);
+	});
+var author$project$Main$indiciesOfGrid = F2(
+	function (num, grid) {
+		var width = elm$core$List$length(
+			elm$core$List$concat(
+				A2(elm$core$List$take, 1, grid)));
+		var i = A2(
+			author$project$Main$indexOfInt,
+			num,
+			elm$core$List$concat(grid));
+		return (i < 0) ? _Utils_Tuple2(-1, -1) : A2(author$project$Main$get2DIndiciesFrom1DList, width, i);
+	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
@@ -5643,6 +5827,10 @@ var author$project$Main$update = F2(
 				var wide = (w / model.gridDimensions.width) | 0;
 				var tall = (h / model.gridDimensions.height) | 0;
 				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
+				var halfSize = (size / 2) | 0;
+				var _n1 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
+				var xZeroed = _n1.a;
+				var yZeroed = _n1.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -5652,6 +5840,8 @@ var author$project$Main$update = F2(
 									height: author$project$Main$getGridDimensions(author$project$Main$tileMap).height * size,
 									width: author$project$Main$getGridDimensions(author$project$Main$tileMap).width * size
 								}),
+							playerPos: elm$core$Maybe$Just(
+								{angle: 0, x: (xZeroed * size) + halfSize, y: (yZeroed * size) + halfSize}),
 							screenSize: elm$core$Maybe$Just(
 								{height: h, width: w}),
 							tileSize: size
@@ -5838,7 +6028,6 @@ var joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 };
 var author$project$Main$makeTile = F5(
 	function (scale, offset, model, index, tileType) {
-		var row = (index / model.gridDimensions.width) | 0;
 		var fillColor = function () {
 			switch (tileType) {
 				case 0:
@@ -5849,7 +6038,9 @@ var author$project$Main$makeTile = F5(
 					return avh4$elm_color$Color$blue;
 			}
 		}();
-		var col = index - (row * model.gridDimensions.width);
+		var _n0 = A2(author$project$Main$get2DIndiciesFrom1DList, model.gridDimensions.width, index);
+		var x = _n0.a;
+		var y = _n0.b;
 		return A2(
 			joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
@@ -5861,22 +6052,11 @@ var author$project$Main$makeTile = F5(
 				[
 					A3(
 					joakin$elm_canvas$Canvas$rect,
-					_Utils_Tuple2((scale * (col * model.tileSize)) + offset.x, (scale * (row * model.tileSize)) + offset.y),
+					_Utils_Tuple2((scale * (x * model.tileSize)) + offset.x, (scale * (y * model.tileSize)) + offset.y),
 					scale * model.tileSize,
 					scale * model.tileSize)
 				]));
 	});
-var elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
-		}
-	});
-var elm$core$List$concat = function (lists) {
-	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
-};
 var author$project$Main$renderMap = function (model) {
 	var partialMakeTile = A3(
 		author$project$Main$makeTile,
@@ -5887,6 +6067,38 @@ var author$project$Main$renderMap = function (model) {
 		elm$core$List$indexedMap,
 		partialMakeTile,
 		elm$core$List$concat(model.grid));
+};
+var joakin$elm_canvas$Canvas$Internal$Canvas$Circle = F2(
+	function (a, b) {
+		return {$: 'Circle', a: a, b: b};
+	});
+var joakin$elm_canvas$Canvas$circle = F2(
+	function (pos, radius) {
+		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Circle, pos, radius);
+	});
+var author$project$Main$renderPlayer = function (model) {
+	var _n0 = model.playerPos;
+	if (_n0.$ === 'Just') {
+		var pos = _n0.a;
+		return _List_fromArray(
+			[
+				A2(
+				joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$blue)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						joakin$elm_canvas$Canvas$circle,
+						_Utils_Tuple2(pos.x, pos.y),
+						model.tileSize / 3)
+					]))
+			]);
+	} else {
+		return _List_Nil;
+	}
 };
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
@@ -6634,7 +6846,9 @@ var author$project$Main$view = function (model) {
 					A2(
 						elm$core$List$cons,
 						A2(author$project$Main$clearScreen, dimensions.width, dimensions.height),
-						author$project$Main$renderMap(model)))
+						_Utils_ap(
+							author$project$Main$renderMap(model),
+							author$project$Main$renderPlayer(model))))
 				]));
 	} else {
 		return A2(

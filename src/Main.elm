@@ -24,7 +24,7 @@ main =
 
 
 
--- MODEL
+-- MODEL --
 
 
 type alias Dimensions =
@@ -32,8 +32,8 @@ type alias Dimensions =
 
 
 type alias Position =
-    { x : Int
-    , y : Int
+    { x : Float
+    , y : Float
     , angle : Float
     }
 
@@ -64,7 +64,7 @@ getGridDimensions grid =
 
 
 type alias Model =
-    { pos : Position
+    { playerPos : Maybe Position
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
@@ -75,7 +75,7 @@ type alias Model =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { pos = { x = 0, y = 0, angle = 0 }
+    ( { playerPos = Nothing
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -87,7 +87,7 @@ init _ =
 
 
 
--- UPDATE
+-- UPDATE --
 
 
 type Msg
@@ -96,6 +96,57 @@ type Msg
     | MoveForward
     | Other
     | ScreenSize Int Int
+
+
+indexOfInt : Int -> List Int -> Int
+indexOfInt num list =
+    let
+        helper : List Int -> Int -> Int -> Int
+        helper li elem offset =
+            case li of
+                [] ->
+                    -1
+
+                x :: xs ->
+                    if x == elem then
+                        offset
+
+                    else
+                        helper xs elem (offset + 1)
+    in
+    helper list num 0
+
+
+get2DIndiciesFrom1DList : Int -> Int -> ( Int, Int )
+get2DIndiciesFrom1DList width index =
+    let
+        row =
+            index // width
+
+        col =
+            index - row * width
+    in
+    if width < 0 || index < 0 then
+        ( -1, -1 )
+
+    else
+        ( col, row )
+
+
+indiciesOfGrid : Int -> List (List Int) -> ( Int, Int )
+indiciesOfGrid num grid =
+    let
+        i =
+            List.concat grid |> indexOfInt num
+
+        width =
+            List.take 1 grid |> List.concat |> List.length
+    in
+    if i < 0 then
+        ( -1, -1 )
+
+    else
+        get2DIndiciesFrom1DList width i
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -124,11 +175,18 @@ update msg model =
 
                     else
                         tall
+
+                halfSize =
+                    size // 2
+
+                ( xZeroed, yZeroed ) =
+                    indiciesOfGrid 0 model.grid
             in
             ( { model
                 | screenSize = Just { width = w, height = h }
                 , canvasSize = Just { width = (getGridDimensions tileMap).width * size, height = (getGridDimensions tileMap).height * size }
                 , tileSize = size
+                , playerPos = Just { x = toFloat (xZeroed * size + halfSize), y = toFloat (yZeroed * size + halfSize), angle = 0 }
               }
             , Cmd.none
             )
@@ -138,7 +196,7 @@ update msg model =
 
 
 
--- SUBSCRIPTIONS
+-- SUBSCRIPTIONS --
 
 
 subscriptions : Model -> Sub Msg
@@ -171,7 +229,7 @@ toDirection string =
 
 
 
--- VIEW
+-- VIEW --
 
 
 clearScreen : Float -> Float -> Renderable
@@ -193,17 +251,14 @@ makeTile scale offset model index tileType =
                 _ ->
                     Color.blue
 
-        row =
-            index // model.gridDimensions.width
-
-        col =
-            index - row * model.gridDimensions.width
+        ( x, y ) =
+            get2DIndiciesFrom1DList model.gridDimensions.width index
     in
     shapes
         [ fill fillColor, stroke Color.black ]
         [ rect
-            ( scale * toFloat (col * model.tileSize) + toFloat offset.x
-            , scale * toFloat (row * model.tileSize) + toFloat offset.y
+            ( scale * toFloat (x * model.tileSize) + offset.x
+            , scale * toFloat (y * model.tileSize) + offset.y
             )
             (scale * toFloat model.tileSize)
             (scale * toFloat model.tileSize)
@@ -217,6 +272,17 @@ renderMap model =
             makeTile 1 { x = 0, y = 0, angle = 0 } model
     in
     List.concat model.grid |> List.indexedMap partialMakeTile
+
+
+renderPlayer : Model -> List Renderable
+renderPlayer model =
+    case model.playerPos of
+        Just pos ->
+            [ shapes [ fill Color.blue ] [ circle ( pos.x, pos.y ) (toFloat model.tileSize / 3) ]
+            ]
+
+        Nothing ->
+            []
 
 
 view : Model -> Html Msg
@@ -234,6 +300,7 @@ view model =
                     []
                     (clearScreen (toFloat dimensions.width) (toFloat dimensions.height)
                         :: renderMap model
+                        ++ renderPlayer model
                     )
                 ]
 
