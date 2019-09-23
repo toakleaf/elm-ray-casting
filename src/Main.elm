@@ -38,20 +38,49 @@ type alias Position =
     }
 
 
+type alias Grid =
+    List (List Int)
+
+
+tileMap : Grid
+tileMap =
+    [ [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 ]
+    , [ 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1 ]
+    , [ 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
+    , [ 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
+    , [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+    ]
+
+
+getGridDimensions : Grid -> Dimensions
+getGridDimensions grid =
+    { width = List.head grid |> Maybe.withDefault [] |> List.length, height = List.length grid }
+
+
 type alias Model =
     { pos : Position
-    , grid : Dimensions
+    , grid : Grid
+    , gridSize : Dimensions
     , tileSize : Int
-    , screen : Maybe Dimensions
+    , canvasSize : Dimensions
+    , screenSize : Maybe Dimensions
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { pos = { x = 0, y = 0, angle = 0 }
-      , grid = { width = 5, height = 5 }
-      , tileSize = 200
-      , screen = Nothing
+      , grid = tileMap
+      , gridSize = getGridDimensions tileMap
+      , tileSize = 32
+      , canvasSize = { width = (getGridDimensions tileMap).width * 32, height = (getGridDimensions tileMap).height * 32 }
+      , screenSize = Nothing
       }
     , Task.perform (\{ viewport } -> ScreenSize (round viewport.width) (round viewport.height)) getViewport
     )
@@ -82,7 +111,7 @@ update msg model =
             ( model, Cmd.none )
 
         ScreenSize w h ->
-            ( { model | screen = Just { width = w, height = h } }
+            ( { model | screenSize = Just { width = w, height = h } }
             , Cmd.none
             )
 
@@ -132,9 +161,44 @@ clearScreen width height =
     shapes [ fill Color.black ] [ rect ( 0, 0 ) width height ]
 
 
+makeTile : Model -> Int -> Int -> Renderable
+makeTile model i tileType =
+    let
+        fillColor =
+            case tileType of
+                0 ->
+                    Color.white
+
+                1 ->
+                    Color.red
+
+                _ ->
+                    Color.blue
+
+        length =
+            List.concat model.grid |> List.length
+
+        row =
+            i // model.gridSize.width
+
+        col =
+            i - row * model.gridSize.width
+    in
+    shapes [ fill fillColor, stroke Color.black ] [ rect ( toFloat (col * model.tileSize), toFloat (row * model.tileSize) ) (toFloat model.tileSize) (toFloat model.tileSize) ]
+
+
+renderMap : Model -> List Renderable
+renderMap model =
+    let
+        partialMakeTile =
+            makeTile model
+    in
+    List.concat model.grid |> List.indexedMap partialMakeTile
+
+
 view : Model -> Html Msg
-view { screen } =
-    case screen of
+view model =
+    case model.screenSize of
         Just dimensions ->
             div
                 [ style "display" "flex"
@@ -144,9 +208,7 @@ view { screen } =
                 [ Canvas.toHtml
                     ( dimensions.width, dimensions.height )
                     []
-                    [ clearScreen (toFloat dimensions.width) (toFloat dimensions.height)
-                    , shapes [ fill Color.red ] [ rect ( 30, 30 ) 200 200 ]
-                    ]
+                    (clearScreen (toFloat dimensions.width) (toFloat dimensions.height) :: renderMap model)
                 ]
 
         Nothing ->
