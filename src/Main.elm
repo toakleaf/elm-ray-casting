@@ -232,7 +232,9 @@ view model =
                 [ Canvas.toHtml
                     ( dimensions.width, dimensions.height )
                     []
-                    (clearScreen (toFloat dimensions.width) (toFloat dimensions.height) :: renderMap model)
+                    (clearScreen (toFloat dimensions.width) (toFloat dimensions.height)
+                        :: renderMap model
+                    )
                 ]
 
         Nothing ->
