@@ -119,7 +119,7 @@ update msg model =
                     h // model.gridDimensions.height
 
                 size =
-                    if wide * model.gridDimensions.height < w then
+                    if wide * model.gridDimensions.height < h then
                         wide
 
                     else

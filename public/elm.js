@@ -5642,7 +5642,7 @@ var author$project$Main$update = F2(
 				var h = msg.b;
 				var wide = (w / model.gridDimensions.width) | 0;
 				var tall = (h / model.gridDimensions.height) | 0;
-				var size = (_Utils_cmp(wide * model.gridDimensions.height, w) < 0) ? wide : tall;
+				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
