@@ -5163,11 +5163,11 @@ var author$project$Main$init = function (_n0) {
 			canvasSize: elm$core$Maybe$Nothing,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
+			movement: {dist: 0, rot: 0},
 			playerPos: {angle: 0, x: 0, y: 0},
-			playerRotVel: 5,
-			playerVel: 5,
 			screenSize: elm$core$Maybe$Nothing,
-			tileSize: 32
+			tileSize: 32,
+			velocity: {dist: 1, rot: 1}
 		},
 		A2(
 			elm$core$Task$perform,
@@ -5180,12 +5180,15 @@ var author$project$Main$init = function (_n0) {
 			},
 			elm$browser$Browser$Dom$getViewport));
 };
+var author$project$Main$Frame = function (a) {
+	return {$: 'Frame', a: a};
+};
 var author$project$Main$MoveBackward = {$: 'MoveBackward'};
 var author$project$Main$MoveForward = {$: 'MoveForward'};
 var author$project$Main$Other = {$: 'Other'};
 var author$project$Main$TurnLeft = {$: 'TurnLeft'};
 var author$project$Main$TurnRight = {$: 'TurnRight'};
-var author$project$Main$toDirection = function (string) {
+var author$project$Main$toMovement = function (string) {
 	switch (string) {
 		case 'ArrowLeft':
 			return author$project$Main$TurnLeft;
@@ -5201,10 +5204,164 @@ var author$project$Main$toDirection = function (string) {
 };
 var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$string = _Json_decodeString;
-var author$project$Main$keyDecoder = A2(
+var author$project$Main$keyDecoderDown = A2(
 	elm$json$Json$Decode$map,
-	author$project$Main$toDirection,
+	author$project$Main$toMovement,
 	A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+var author$project$Main$StopMoving = {$: 'StopMoving'};
+var author$project$Main$StopTurning = {$: 'StopTurning'};
+var author$project$Main$clearMovement = function (string) {
+	switch (string) {
+		case 'ArrowLeft':
+			return author$project$Main$StopTurning;
+		case 'ArrowRight':
+			return author$project$Main$StopTurning;
+		case 'ArrowUp':
+			return author$project$Main$StopMoving;
+		case 'ArrowDown':
+			return author$project$Main$StopMoving;
+		default:
+			return author$project$Main$Other;
+	}
+};
+var author$project$Main$keyDecoderUp = A2(
+	elm$json$Json$Decode$map,
+	author$project$Main$clearMovement,
+	A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+var elm$browser$Browser$AnimationManager$Delta = function (a) {
+	return {$: 'Delta', a: a};
+};
+var elm$browser$Browser$AnimationManager$State = F3(
+	function (subs, request, oldTime) {
+		return {oldTime: oldTime, request: request, subs: subs};
+	});
+var elm$browser$Browser$AnimationManager$init = elm$core$Task$succeed(
+	A3(elm$browser$Browser$AnimationManager$State, _List_Nil, elm$core$Maybe$Nothing, 0));
+var elm$browser$Browser$AnimationManager$now = _Browser_now(_Utils_Tuple0);
+var elm$browser$Browser$AnimationManager$rAF = _Browser_rAF(_Utils_Tuple0);
+var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var elm$core$Process$kill = _Scheduler_kill;
+var elm$core$Process$spawn = _Scheduler_spawn;
+var elm$browser$Browser$AnimationManager$onEffects = F3(
+	function (router, subs, _n0) {
+		var request = _n0.request;
+		var oldTime = _n0.oldTime;
+		var _n1 = _Utils_Tuple2(request, subs);
+		if (_n1.a.$ === 'Nothing') {
+			if (!_n1.b.b) {
+				var _n2 = _n1.a;
+				return elm$browser$Browser$AnimationManager$init;
+			} else {
+				var _n4 = _n1.a;
+				return A2(
+					elm$core$Task$andThen,
+					function (pid) {
+						return A2(
+							elm$core$Task$andThen,
+							function (time) {
+								return elm$core$Task$succeed(
+									A3(
+										elm$browser$Browser$AnimationManager$State,
+										subs,
+										elm$core$Maybe$Just(pid),
+										time));
+							},
+							elm$browser$Browser$AnimationManager$now);
+					},
+					elm$core$Process$spawn(
+						A2(
+							elm$core$Task$andThen,
+							elm$core$Platform$sendToSelf(router),
+							elm$browser$Browser$AnimationManager$rAF)));
+			}
+		} else {
+			if (!_n1.b.b) {
+				var pid = _n1.a.a;
+				return A2(
+					elm$core$Task$andThen,
+					function (_n3) {
+						return elm$browser$Browser$AnimationManager$init;
+					},
+					elm$core$Process$kill(pid));
+			} else {
+				return elm$core$Task$succeed(
+					A3(elm$browser$Browser$AnimationManager$State, subs, request, oldTime));
+			}
+		}
+	});
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
+var elm$browser$Browser$AnimationManager$onSelfMsg = F3(
+	function (router, newTime, _n0) {
+		var subs = _n0.subs;
+		var oldTime = _n0.oldTime;
+		var send = function (sub) {
+			if (sub.$ === 'Time') {
+				var tagger = sub.a;
+				return A2(
+					elm$core$Platform$sendToApp,
+					router,
+					tagger(
+						elm$time$Time$millisToPosix(newTime)));
+			} else {
+				var tagger = sub.a;
+				return A2(
+					elm$core$Platform$sendToApp,
+					router,
+					tagger(newTime - oldTime));
+			}
+		};
+		return A2(
+			elm$core$Task$andThen,
+			function (pid) {
+				return A2(
+					elm$core$Task$andThen,
+					function (_n1) {
+						return elm$core$Task$succeed(
+							A3(
+								elm$browser$Browser$AnimationManager$State,
+								subs,
+								elm$core$Maybe$Just(pid),
+								newTime));
+					},
+					elm$core$Task$sequence(
+						A2(elm$core$List$map, send, subs)));
+			},
+			elm$core$Process$spawn(
+				A2(
+					elm$core$Task$andThen,
+					elm$core$Platform$sendToSelf(router),
+					elm$browser$Browser$AnimationManager$rAF)));
+	});
+var elm$browser$Browser$AnimationManager$Time = function (a) {
+	return {$: 'Time', a: a};
+};
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var elm$browser$Browser$AnimationManager$subMap = F2(
+	function (func, sub) {
+		if (sub.$ === 'Time') {
+			var tagger = sub.a;
+			return elm$browser$Browser$AnimationManager$Time(
+				A2(elm$core$Basics$composeL, func, tagger));
+		} else {
+			var tagger = sub.a;
+			return elm$browser$Browser$AnimationManager$Delta(
+				A2(elm$core$Basics$composeL, func, tagger));
+		}
+	});
+_Platform_effectManagers['Browser.AnimationManager'] = _Platform_createManager(elm$browser$Browser$AnimationManager$init, elm$browser$Browser$AnimationManager$onEffects, elm$browser$Browser$AnimationManager$onSelfMsg, 0, elm$browser$Browser$AnimationManager$subMap);
+var elm$browser$Browser$AnimationManager$subscription = _Platform_leaf('Browser.AnimationManager');
+var elm$browser$Browser$AnimationManager$onAnimationFrameDelta = function (tagger) {
+	return elm$browser$Browser$AnimationManager$subscription(
+		elm$browser$Browser$AnimationManager$Delta(tagger));
+};
+var elm$browser$Browser$Events$onAnimationFrameDelta = elm$browser$Browser$AnimationManager$onAnimationFrameDelta;
 var elm$browser$Browser$Events$Document = {$: 'Document'};
 var elm$browser$Browser$Events$MySub = F3(
 	function (a, b, c) {
@@ -5238,7 +5395,6 @@ var elm$browser$Browser$Events$Event = F2(
 	function (key, event) {
 		return {event: event, key: key};
 	});
-var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var elm$browser$Browser$Events$spawn = F3(
 	function (router, key, _n0) {
 		var node = _n0.a;
@@ -5477,7 +5633,6 @@ var elm$core$Dict$union = F2(
 	function (t1, t2) {
 		return A3(elm$core$Dict$foldl, elm$core$Dict$insert, t2, t1);
 	});
-var elm$core$Process$kill = _Scheduler_kill;
 var elm$browser$Browser$Events$onEffects = F3(
 	function (router, subs, state) {
 		var stepRight = F3(
@@ -5606,6 +5761,7 @@ var elm$browser$Browser$Events$on = F3(
 			A3(elm$browser$Browser$Events$MySub, node, name, decoder));
 	});
 var elm$browser$Browser$Events$onKeyDown = A2(elm$browser$Browser$Events$on, elm$browser$Browser$Events$Document, 'keydown');
+var elm$browser$Browser$Events$onKeyUp = A2(elm$browser$Browser$Events$on, elm$browser$Browser$Events$Document, 'keyup');
 var elm$browser$Browser$Events$Window = {$: 'Window'};
 var elm$json$Json$Decode$int = _Json_decodeInt;
 var elm$browser$Browser$Events$onResize = function (func) {
@@ -5627,8 +5783,10 @@ var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
-				elm$browser$Browser$Events$onKeyDown(author$project$Main$keyDecoder),
-				elm$browser$Browser$Events$onResize(author$project$Main$ScreenSize)
+				elm$browser$Browser$Events$onKeyDown(author$project$Main$keyDecoderDown),
+				elm$browser$Browser$Events$onKeyUp(author$project$Main$keyDecoderUp),
+				elm$browser$Browser$Events$onResize(author$project$Main$ScreenSize),
+				elm$browser$Browser$Events$onAnimationFrameDelta(author$project$Main$Frame)
 			]));
 };
 var elm$core$Basics$negate = function (n) {
@@ -5832,19 +5990,31 @@ var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
 	function (msg, model) {
-		var _n0 = elm$core$Basics$fromPolar(
+		var _n0 = model.playerPos;
+		var x = _n0.x;
+		var y = _n0.y;
+		var angle = _n0.angle;
+		var _n1 = elm$core$Basics$fromPolar(
 			_Utils_Tuple2(
-				model.playerVel,
-				elm$core$Basics$degrees(model.playerPos.angle)));
-		var dx = _n0.a;
-		var dy = _n0.b;
+				model.movement.dist,
+				elm$core$Basics$degrees(angle + model.movement.rot)));
+		var dx = _n1.a;
+		var dy = _n1.b;
 		switch (msg.$) {
+			case 'Frame':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							playerPos: {angle: angle + model.movement.rot, x: x + dx, y: y + dy}
+						}),
+					elm$core$Platform$Cmd$none);
 			case 'TurnLeft':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							playerPos: {angle: model.playerPos.angle - model.playerRotVel, x: model.playerPos.x, y: model.playerPos.y}
+							movement: {dist: model.movement.dist, rot: model.velocity.rot * (-1)}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'TurnRight':
@@ -5852,7 +6022,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							playerPos: {angle: model.playerPos.angle + model.playerRotVel, x: model.playerPos.x, y: model.playerPos.y}
+							movement: {dist: model.movement.dist, rot: model.velocity.rot}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'MoveForward':
@@ -5860,7 +6030,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							playerPos: {angle: model.playerPos.angle, x: model.playerPos.x + dx, y: model.playerPos.y + dy}
+							movement: {dist: model.velocity.dist, rot: model.movement.rot}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'MoveBackward':
@@ -5868,7 +6038,23 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							playerPos: {angle: model.playerPos.angle, x: model.playerPos.x - dx, y: model.playerPos.y - dy}
+							movement: {dist: model.velocity.dist * (-1), rot: model.movement.rot}
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'StopTurning':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							movement: {dist: model.movement.dist, rot: 0}
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'StopMoving':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							movement: {dist: 0, rot: model.movement.rot}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'ScreenSize':
@@ -5878,9 +6064,9 @@ var author$project$Main$update = F2(
 				var tall = (h / model.gridDimensions.height) | 0;
 				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
 				var halfSize = (size / 2) | 0;
-				var _n2 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
-				var xZeroed = _n2.a;
-				var yZeroed = _n2.b;
+				var _n3 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
+				var xZeroed = _n3.a;
+				var yZeroed = _n3.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,

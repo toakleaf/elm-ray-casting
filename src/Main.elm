@@ -2,11 +2,12 @@ module Main exposing (..)
 
 import Browser
 import Browser.Dom exposing (Viewport, getViewport)
-import Browser.Events exposing (onKeyDown, onResize)
+import Browser.Events exposing (onAnimationFrameDelta, onKeyDown, onKeyUp, onResize)
 import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Advanced exposing (..)
 import Canvas.Settings.Line exposing (..)
+import Canvas.Settings.Text exposing (..)
 import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
@@ -39,6 +40,10 @@ type alias Position =
     }
 
 
+type alias Polar =
+    { dist : Float, rot : Float }
+
+
 type alias Grid =
     List (List Int)
 
@@ -66,8 +71,8 @@ getGridDimensions grid =
 
 type alias Model =
     { playerPos : Position
-    , playerVel : Float
-    , playerRotVel : Float
+    , movement : Polar
+    , velocity : Polar
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
@@ -79,8 +84,8 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { playerPos = { x = 0, y = 0, angle = 0 }
-      , playerVel = 5
-      , playerRotVel = 5
+      , movement = { dist = 0, rot = 0 }
+      , velocity = { dist = 1, rot = 1 }
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -96,10 +101,13 @@ init _ =
 
 
 type Msg
-    = TurnLeft
+    = Frame Float
+    | TurnLeft
     | TurnRight
     | MoveForward
     | MoveBackward
+    | StopTurning
+    | StopMoving
     | Other
     | ScreenSize Int Int
 
@@ -158,21 +166,37 @@ indiciesOfGrid num grid =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
+        { x, y, angle } =
+            model.playerPos
+
         ( dx, dy ) =
-            fromPolar ( model.playerVel, degrees model.playerPos.angle )
+            fromPolar ( model.movement.dist, degrees (angle + model.movement.rot) )
     in
     case msg of
+        Frame _ ->
+            ( { model
+                | playerPos = { x = x + dx, y = y + dy, angle = angle + model.movement.rot }
+              }
+            , Cmd.none
+            )
+
         TurnLeft ->
-            ( { model | playerPos = { x = model.playerPos.x, y = model.playerPos.y, angle = model.playerPos.angle - model.playerRotVel } }, Cmd.none )
+            ( { model | movement = { dist = model.movement.dist, rot = model.velocity.rot * -1 } }, Cmd.none )
 
         TurnRight ->
-            ( { model | playerPos = { x = model.playerPos.x, y = model.playerPos.y, angle = model.playerPos.angle + model.playerRotVel } }, Cmd.none )
+            ( { model | movement = { dist = model.movement.dist, rot = model.velocity.rot } }, Cmd.none )
 
         MoveForward ->
-            ( { model | playerPos = { x = model.playerPos.x + dx, y = model.playerPos.y + dy, angle = model.playerPos.angle } }, Cmd.none )
+            ( { model | movement = { dist = model.velocity.dist, rot = model.movement.rot } }, Cmd.none )
 
         MoveBackward ->
-            ( { model | playerPos = { x = model.playerPos.x - dx, y = model.playerPos.y - dy, angle = model.playerPos.angle } }, Cmd.none )
+            ( { model | movement = { dist = model.velocity.dist * -1, rot = model.movement.rot } }, Cmd.none )
+
+        StopTurning ->
+            ( { model | movement = { dist = model.movement.dist, rot = 0 } }, Cmd.none )
+
+        StopMoving ->
+            ( { model | movement = { dist = 0, rot = model.movement.rot } }, Cmd.none )
 
         ScreenSize w h ->
             let
@@ -220,18 +244,25 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ onKeyDown keyDecoder
+        [ onKeyDown keyDecoderDown
+        , onKeyUp keyDecoderUp
         , onResize ScreenSize
+        , onAnimationFrameDelta Frame
         ]
 
 
-keyDecoder : Decode.Decoder Msg
-keyDecoder =
-    Decode.map toDirection (Decode.field "key" Decode.string)
+keyDecoderDown : Decode.Decoder Msg
+keyDecoderDown =
+    Decode.map toMovement (Decode.field "key" Decode.string)
 
 
-toDirection : String -> Msg
-toDirection string =
+keyDecoderUp : Decode.Decoder Msg
+keyDecoderUp =
+    Decode.map clearMovement (Decode.field "key" Decode.string)
+
+
+toMovement : String -> Msg
+toMovement string =
     case string of
         "ArrowLeft" ->
             TurnLeft
@@ -244,6 +275,25 @@ toDirection string =
 
         "ArrowDown" ->
             MoveBackward
+
+        _ ->
+            Other
+
+
+clearMovement : String -> Msg
+clearMovement string =
+    case string of
+        "ArrowLeft" ->
+            StopTurning
+
+        "ArrowRight" ->
+            StopTurning
+
+        "ArrowUp" ->
+            StopMoving
+
+        "ArrowDown" ->
+            StopMoving
 
         _ ->
             Other
