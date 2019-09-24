@@ -11,5 +11,5 @@ Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HT
 5.  ~~Fix the choppy animation framerate~~
 6.  ~~Collision Detection~~
 7.  ~~Calculate FOV rays~~
-8.  Calculate array collisions
+8.  Calculate ray collisions
 9.  Add a D
