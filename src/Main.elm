@@ -74,6 +74,7 @@ type alias Model =
     , playerRadSize : Float
     , movement : Polar
     , velocity : Polar
+    , fov : Float
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
@@ -88,6 +89,7 @@ init _ =
       , playerRadSize = 10
       , movement = { dist = 0, rot = 0 }
       , velocity = { dist = 3, rot = 3 }
+      , fov = 60
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
