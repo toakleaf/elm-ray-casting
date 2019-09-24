@@ -5167,7 +5167,7 @@ var author$project$Main$init = function (_n0) {
 			playerPos: {angle: 0, x: 0, y: 0},
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32,
-			velocity: {dist: 1, rot: 1}
+			velocity: {dist: 2, rot: 1}
 		},
 		A2(
 			elm$core$Task$perform,
@@ -5208,18 +5208,20 @@ var author$project$Main$keyDecoderDown = A2(
 	elm$json$Json$Decode$map,
 	author$project$Main$toMovement,
 	A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
-var author$project$Main$StopMoving = {$: 'StopMoving'};
-var author$project$Main$StopTurning = {$: 'StopTurning'};
+var author$project$Main$CancelBackward = {$: 'CancelBackward'};
+var author$project$Main$CancelForward = {$: 'CancelForward'};
+var author$project$Main$CancelLeft = {$: 'CancelLeft'};
+var author$project$Main$CancelRight = {$: 'CancelRight'};
 var author$project$Main$clearMovement = function (string) {
 	switch (string) {
 		case 'ArrowLeft':
-			return author$project$Main$StopTurning;
+			return author$project$Main$CancelLeft;
 		case 'ArrowRight':
-			return author$project$Main$StopTurning;
+			return author$project$Main$CancelRight;
 		case 'ArrowUp':
-			return author$project$Main$StopMoving;
+			return author$project$Main$CancelForward;
 		case 'ArrowDown':
-			return author$project$Main$StopMoving;
+			return author$project$Main$CancelBackward;
 		default:
 			return author$project$Main$Other;
 	}
@@ -5986,20 +5988,24 @@ var elm$core$Basics$fromPolar = function (_n0) {
 		radius * elm$core$Basics$cos(theta),
 		radius * elm$core$Basics$sin(theta));
 };
+var elm$core$Debug$log = _Debug_log;
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
 	function (msg, model) {
-		var _n0 = model.playerPos;
-		var x = _n0.x;
-		var y = _n0.y;
-		var angle = _n0.angle;
-		var _n1 = elm$core$Basics$fromPolar(
+		var _n0 = model.movement;
+		var dist = _n0.dist;
+		var rot = _n0.rot;
+		var _n1 = model.playerPos;
+		var x = _n1.x;
+		var y = _n1.y;
+		var angle = _n1.angle;
+		var _n2 = elm$core$Basics$fromPolar(
 			_Utils_Tuple2(
 				model.movement.dist,
 				elm$core$Basics$degrees(angle + model.movement.rot)));
-		var dx = _n1.a;
-		var dy = _n1.b;
+		var dx = _n2.a;
+		var dy = _n2.b;
 		switch (msg.$) {
 			case 'Frame':
 				return _Utils_Tuple2(
@@ -6014,7 +6020,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							movement: {dist: model.movement.dist, rot: model.velocity.rot * (-1)}
+							movement: {dist: dist, rot: model.velocity.rot * (-1)}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'TurnRight':
@@ -6022,7 +6028,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							movement: {dist: model.movement.dist, rot: model.velocity.rot}
+							movement: {dist: dist, rot: model.velocity.rot}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'MoveForward':
@@ -6030,7 +6036,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							movement: {dist: model.velocity.dist, rot: model.movement.rot}
+							movement: {dist: model.velocity.dist, rot: rot}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'MoveBackward':
@@ -6038,23 +6044,42 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							movement: {dist: model.velocity.dist * (-1), rot: model.movement.rot}
+							movement: {dist: model.velocity.dist * (-1), rot: rot}
 						}),
 					elm$core$Platform$Cmd$none);
-			case 'StopTurning':
+			case 'CancelLeft':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							movement: {dist: model.movement.dist, rot: 0}
+							movement: {dist: dist, rot: rot + model.velocity.rot}
 						}),
 					elm$core$Platform$Cmd$none);
-			case 'StopMoving':
+			case 'CancelRight':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							movement: {dist: 0, rot: model.movement.rot}
+							movement: {dist: dist, rot: rot - model.velocity.rot}
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'CancelForward':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							movement: {dist: dist - model.velocity.dist, rot: rot}
+						}),
+					elm$core$Platform$Cmd$none);
+			case 'CancelBackward':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							movement: {
+								dist: A2(elm$core$Debug$log, 'dist', dist) + model.velocity.dist,
+								rot: rot
+							}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'ScreenSize':
@@ -6064,9 +6089,9 @@ var author$project$Main$update = F2(
 				var tall = (h / model.gridDimensions.height) | 0;
 				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
 				var halfSize = (size / 2) | 0;
-				var _n3 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
-				var xZeroed = _n3.a;
-				var yZeroed = _n3.b;
+				var _n4 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
+				var xZeroed = _n4.a;
+				var yZeroed = _n4.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,

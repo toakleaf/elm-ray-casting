@@ -85,7 +85,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { playerPos = { x = 0, y = 0, angle = 0 }
       , movement = { dist = 0, rot = 0 }
-      , velocity = { dist = 1, rot = 1 }
+      , velocity = { dist = 2, rot = 1 }
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -106,8 +106,10 @@ type Msg
     | TurnRight
     | MoveForward
     | MoveBackward
-    | StopTurning
-    | StopMoving
+    | CancelLeft
+    | CancelRight
+    | CancelForward
+    | CancelBackward
     | Other
     | ScreenSize Int Int
 
@@ -171,6 +173,9 @@ update msg model =
 
         ( dx, dy ) =
             fromPolar ( model.movement.dist, degrees (angle + model.movement.rot) )
+
+        { dist, rot } =
+            model.movement
     in
     case msg of
         Frame _ ->
@@ -181,22 +186,28 @@ update msg model =
             )
 
         TurnLeft ->
-            ( { model | movement = { dist = model.movement.dist, rot = model.velocity.rot * -1 } }, Cmd.none )
+            ( { model | movement = { dist = dist, rot = model.velocity.rot * -1 } }, Cmd.none )
 
         TurnRight ->
-            ( { model | movement = { dist = model.movement.dist, rot = model.velocity.rot } }, Cmd.none )
+            ( { model | movement = { dist = dist, rot = model.velocity.rot } }, Cmd.none )
 
         MoveForward ->
-            ( { model | movement = { dist = model.velocity.dist, rot = model.movement.rot } }, Cmd.none )
+            ( { model | movement = { dist = model.velocity.dist, rot = rot } }, Cmd.none )
 
         MoveBackward ->
-            ( { model | movement = { dist = model.velocity.dist * -1, rot = model.movement.rot } }, Cmd.none )
+            ( { model | movement = { dist = model.velocity.dist * -1, rot = rot } }, Cmd.none )
 
-        StopTurning ->
-            ( { model | movement = { dist = model.movement.dist, rot = 0 } }, Cmd.none )
+        CancelLeft ->
+            ( { model | movement = { dist = dist, rot = rot + model.velocity.rot } }, Cmd.none )
 
-        StopMoving ->
-            ( { model | movement = { dist = 0, rot = model.movement.rot } }, Cmd.none )
+        CancelRight ->
+            ( { model | movement = { dist = dist, rot = rot - model.velocity.rot } }, Cmd.none )
+
+        CancelForward ->
+            ( { model | movement = { dist = dist - model.velocity.dist, rot = rot } }, Cmd.none )
+
+        CancelBackward ->
+            ( { model | movement = { dist = dist + model.velocity.dist, rot = rot } }, Cmd.none )
 
         ScreenSize w h ->
             let
@@ -284,16 +295,16 @@ clearMovement : String -> Msg
 clearMovement string =
     case string of
         "ArrowLeft" ->
-            StopTurning
+            CancelLeft
 
         "ArrowRight" ->
-            StopTurning
+            CancelRight
 
         "ArrowUp" ->
-            StopMoving
+            CancelForward
 
         "ArrowDown" ->
-            StopMoving
+            CancelBackward
 
         _ ->
             Other
