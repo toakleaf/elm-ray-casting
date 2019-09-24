@@ -75,6 +75,7 @@ type alias Model =
     , movement : Polar
     , velocity : Polar
     , fov : Float
+    , numRays : Int
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
@@ -90,6 +91,7 @@ init _ =
       , movement = { dist = 0, rot = 0 }
       , velocity = { dist = 3, rot = 3 }
       , fov = 60
+      , numRays = 30
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -417,6 +419,20 @@ renderMap model =
     List.concat model.grid |> List.indexedMap partialMakeTile
 
 
+renderRay : Model -> Float -> Float -> Shape
+renderRay model len angle =
+    let
+        ( dx, dy ) =
+            fromPolar ( len, degrees angle )
+    in
+    path ( model.playerPos.x, model.playerPos.y )
+        [ lineTo
+            ( model.playerPos.x + dx
+            , model.playerPos.y + dy
+            )
+        ]
+
+
 renderPlayer : Model -> List Renderable
 renderPlayer model =
     let
@@ -425,8 +441,19 @@ renderPlayer model =
 
         ( dx, dy ) =
             fromPolar ( lineLength, degrees model.playerPos.angle )
+
+        stepSize =
+            model.fov / toFloat model.numRays
+
+        li =
+            List.range 0 model.numRays |> List.map (\n -> model.fov / 2 + model.playerPos.angle - stepSize * toFloat n)
     in
-    [ shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) model.playerRadSize ]
+    [ shapes
+        [ stroke Color.lightBlue
+        , lineWidth 1
+        ]
+        (List.map (\n -> renderRay model lineLength n) li)
+    , shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) model.playerRadSize ]
     , shapes
         [ stroke Color.blue
         , lineWidth 5

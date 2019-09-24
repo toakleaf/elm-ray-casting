@@ -5161,9 +5161,11 @@ var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
 		{
 			canvasSize: elm$core$Maybe$Nothing,
+			fov: 60,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
 			movement: {dist: 0, rot: 0},
+			numRays: 30,
 			playerPos: {angle: 0, x: 0, y: 0},
 			playerRadSize: 10,
 			screenSize: elm$core$Maybe$Nothing,
@@ -6436,14 +6438,6 @@ var author$project$Main$renderMap = function (model) {
 		partialMakeTile,
 		elm$core$List$concat(model.grid));
 };
-var joakin$elm_canvas$Canvas$Internal$Canvas$Circle = F2(
-	function (a, b) {
-		return {$: 'Circle', a: a, b: b};
-	});
-var joakin$elm_canvas$Canvas$circle = F2(
-	function (pos, radius) {
-		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Circle, pos, radius);
-	});
 var joakin$elm_canvas$Canvas$Internal$Canvas$LineTo = function (a) {
 	return {$: 'LineTo', a: a};
 };
@@ -6457,6 +6451,32 @@ var joakin$elm_canvas$Canvas$Internal$Canvas$Path = F2(
 var joakin$elm_canvas$Canvas$path = F2(
 	function (startingPoint, segments) {
 		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
+	});
+var author$project$Main$renderRay = F3(
+	function (model, len, angle) {
+		var _n0 = elm$core$Basics$fromPolar(
+			_Utils_Tuple2(
+				len,
+				elm$core$Basics$degrees(angle)));
+		var dx = _n0.a;
+		var dy = _n0.b;
+		return A2(
+			joakin$elm_canvas$Canvas$path,
+			_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
+			_List_fromArray(
+				[
+					joakin$elm_canvas$Canvas$lineTo(
+					_Utils_Tuple2(model.playerPos.x + dx, model.playerPos.y + dy))
+				]));
+	});
+var avh4$elm_color$Color$lightBlue = A4(avh4$elm_color$Color$RgbaSpace, 114 / 255, 159 / 255, 207 / 255, 1.0);
+var joakin$elm_canvas$Canvas$Internal$Canvas$Circle = F2(
+	function (a, b) {
+		return {$: 'Circle', a: a, b: b};
+	});
+var joakin$elm_canvas$Canvas$circle = F2(
+	function (pos, radius) {
+		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Circle, pos, radius);
 	});
 var joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand = function (a) {
 	return {$: 'SettingCommand', a: a};
@@ -6501,7 +6521,14 @@ var joakin$elm_canvas$Canvas$Settings$Line$lineWidth = function (width) {
 		joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$lineWidth(width));
 };
 var author$project$Main$renderPlayer = function (model) {
+	var stepSize = model.fov / model.numRays;
 	var lineLength = 100;
+	var li = A2(
+		elm$core$List$map,
+		function (n) {
+			return ((model.fov / 2) + model.playerPos.angle) - (stepSize * n);
+		},
+		A2(elm$core$List$range, 0, model.numRays));
 	var _n0 = elm$core$Basics$fromPolar(
 		_Utils_Tuple2(
 			lineLength,
@@ -6510,6 +6537,19 @@ var author$project$Main$renderPlayer = function (model) {
 	var dy = _n0.b;
 	return _List_fromArray(
 		[
+			A2(
+			joakin$elm_canvas$Canvas$shapes,
+			_List_fromArray(
+				[
+					joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$lightBlue),
+					joakin$elm_canvas$Canvas$Settings$Line$lineWidth(1)
+				]),
+			A2(
+				elm$core$List$map,
+				function (n) {
+					return A3(author$project$Main$renderRay, model, lineLength, n);
+				},
+				li)),
 			A2(
 			joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
