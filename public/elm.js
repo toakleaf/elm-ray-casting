@@ -6096,16 +6096,32 @@ var author$project$Main$update = F2(
 		var dy = _n2.b;
 		switch (msg.$) {
 			case 'Frame':
-				var collisions = A2(
+				var collisionY = A2(
 					author$project$Main$hasCollision,
 					model,
-					{angle: angle, x: x + dx, y: y + dy});
+					{angle: angle, x: x, y: y + dy});
+				var collisionX = A2(
+					author$project$Main$hasCollision,
+					model,
+					{angle: angle, x: x + dx, y: y});
 				return _Utils_Tuple2(
-					(!collisions) ? _Utils_update(
+					(collisionX && collisionY) ? _Utils_update(
+						model,
+						{
+							playerPos: {angle: angle + model.movement.rot, x: x, y: y}
+						}) : (collisionX ? _Utils_update(
+						model,
+						{
+							playerPos: {angle: angle + model.movement.rot, x: x, y: y + dy}
+						}) : (collisionY ? _Utils_update(
+						model,
+						{
+							playerPos: {angle: angle + model.movement.rot, x: x + dx, y: y}
+						}) : _Utils_update(
 						model,
 						{
 							playerPos: {angle: angle + model.movement.rot, x: x + dx, y: y + dy}
-						}) : model,
+						}))),
 					elm$core$Platform$Cmd$none);
 			case 'TurnLeft':
 				return _Utils_Tuple2(

@@ -215,31 +215,31 @@ update msg model =
     case msg of
         Frame _ ->
             let
-                collisionX =
-                    hasCollision model { x = x + dx, y = y, angle = angle }
-
-                collisionY =
-                    hasCollision model { x = x, y = y + dy, angle = angle }
+                collisions =
+                    hasCollision model { x = x + dx, y = y + dy, angle = angle }
             in
-            ( if collisionX && collisionY then
-                { model
-                    | playerPos = { x = x, y = y, angle = angle + model.movement.rot }
-                }
-
-              else if collisionX then
-                { model
-                    | playerPos = { x = x, y = y + dy, angle = angle + model.movement.rot }
-                }
-
-              else if collisionY then
-                { model
-                    | playerPos = { x = x + dx, y = y, angle = angle + model.movement.rot }
-                }
-
-              else
+            ( if collisions /= True then
                 { model
                     | playerPos = { x = x + dx, y = y + dy, angle = angle + model.movement.rot }
                 }
+
+              else if dy > 0 && dx < 0 then
+                -- up left
+                { model
+                    | playerPos = { x = x + dx, y = y + dy, angle = angle + model.movement.rot }
+                }
+
+              else if dy > 0 && dx >= 0 then
+                -- up right
+                model
+
+              else if dy <= 0 && dx < 0 then
+                -- down left
+                model
+
+              else
+                -- down right
+                model
             , Cmd.none
             )
 
