@@ -5165,9 +5165,10 @@ var author$project$Main$init = function (_n0) {
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
 			movement: {dist: 0, rot: 0},
 			playerPos: {angle: 0, x: 0, y: 0},
+			playerRadSize: 10,
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32,
-			velocity: {dist: 2, rot: 1}
+			velocity: {dist: 3, rot: 3}
 		},
 		A2(
 			elm$core$Task$perform,
@@ -5791,41 +5792,27 @@ var author$project$Main$subscriptions = function (model) {
 				elm$browser$Browser$Events$onAnimationFrameDelta(author$project$Main$Frame)
 			]));
 };
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var author$project$Main$get2DIndiciesFrom1DList = F2(
-	function (width, index) {
-		var row = (index / width) | 0;
-		var col = index - (row * width);
-		return ((width < 0) || (index < 0)) ? _Utils_Tuple2(-1, -1) : _Utils_Tuple2(col, row);
-	});
-var author$project$Main$indexOfInt = F2(
-	function (num, list) {
-		var helper = F3(
-			function (li, elem, offset) {
-				helper:
-				while (true) {
-					if (!li.b) {
-						return -1;
-					} else {
-						var x = li.a;
-						var xs = li.b;
-						if (_Utils_eq(x, elem)) {
-							return offset;
-						} else {
-							var $temp$li = xs,
-								$temp$elem = elem,
-								$temp$offset = offset + 1;
-							li = $temp$li;
-							elem = $temp$elem;
-							offset = $temp$offset;
-							continue helper;
-						}
-					}
+var elm$core$Basics$neq = _Utils_notEqual;
+var elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
 				}
-			});
-		return A3(helper, list, num, 0);
+			}
+		}
 	});
 var elm$core$List$append = F2(
 	function (xs, ys) {
@@ -5838,6 +5825,27 @@ var elm$core$List$append = F2(
 var elm$core$List$concat = function (lists) {
 	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
 };
+var elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
 var elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
 		takeReverse:
@@ -5964,6 +5972,87 @@ var elm$core$List$take = F2(
 	function (n, list) {
 		return A3(elm$core$List$takeFast, 0, n, list);
 	});
+var elm$core$Tuple$second = function (_n0) {
+	var y = _n0.b;
+	return y;
+};
+var author$project$Main$hasCollision = F2(
+	function (model, pos) {
+		var rad = model.playerRadSize;
+		var subjectCorners = _List_fromArray(
+			[
+				_Utils_Tuple2(
+				elm$core$Basics$floor(pos.x - rad),
+				elm$core$Basics$floor(pos.y - rad)),
+				_Utils_Tuple2(
+				elm$core$Basics$ceiling(pos.x + rad),
+				elm$core$Basics$floor(pos.y - rad)),
+				_Utils_Tuple2(
+				elm$core$Basics$ceiling(pos.x + rad),
+				elm$core$Basics$ceiling(pos.y + rad)),
+				_Utils_Tuple2(
+				elm$core$Basics$floor(pos.x - rad),
+				elm$core$Basics$ceiling(pos.y + rad))
+			]);
+		var check = function (tup) {
+			var y = (tup.b / model.tileSize) | 0;
+			var x = (tup.a / model.tileSize) | 0;
+			var cell = A2(
+				elm$core$List$drop,
+				x,
+				elm$core$List$concat(
+					A2(
+						elm$core$List$take,
+						1,
+						A2(elm$core$List$drop, y, model.grid))));
+			var item = elm$core$List$head(cell);
+			return !_Utils_eq(
+				item,
+				elm$core$Maybe$Just(0));
+		};
+		return A2(
+			elm$core$List$any,
+			function (a) {
+				return a;
+			},
+			A2(elm$core$List$map, check, subjectCorners));
+	});
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var author$project$Main$get2DIndiciesFrom1DList = F2(
+	function (width, index) {
+		var row = (index / width) | 0;
+		var col = index - (row * width);
+		return ((width < 0) || (index < 0)) ? _Utils_Tuple2(-1, -1) : _Utils_Tuple2(col, row);
+	});
+var author$project$Main$indexOfInt = F2(
+	function (num, list) {
+		var helper = F3(
+			function (li, elem, offset) {
+				helper:
+				while (true) {
+					if (!li.b) {
+						return -1;
+					} else {
+						var x = li.a;
+						var xs = li.b;
+						if (_Utils_eq(x, elem)) {
+							return offset;
+						} else {
+							var $temp$li = xs,
+								$temp$elem = elem,
+								$temp$offset = offset + 1;
+							li = $temp$li;
+							elem = $temp$elem;
+							offset = $temp$offset;
+							continue helper;
+						}
+					}
+				}
+			});
+		return A3(helper, list, num, 0);
+	});
 var author$project$Main$indiciesOfGrid = F2(
 	function (num, grid) {
 		var width = elm$core$List$length(
@@ -5988,7 +6077,6 @@ var elm$core$Basics$fromPolar = function (_n0) {
 		radius * elm$core$Basics$cos(theta),
 		radius * elm$core$Basics$sin(theta));
 };
-var elm$core$Debug$log = _Debug_log;
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
@@ -6008,12 +6096,16 @@ var author$project$Main$update = F2(
 		var dy = _n2.b;
 		switch (msg.$) {
 			case 'Frame':
+				var collisions = A2(
+					author$project$Main$hasCollision,
+					model,
+					{angle: angle, x: x + dx, y: y + dy});
 				return _Utils_Tuple2(
-					_Utils_update(
+					(!collisions) ? _Utils_update(
 						model,
 						{
 							playerPos: {angle: angle + model.movement.rot, x: x + dx, y: y + dy}
-						}),
+						}) : model,
 					elm$core$Platform$Cmd$none);
 			case 'TurnLeft':
 				return _Utils_Tuple2(
@@ -6076,10 +6168,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							movement: {
-								dist: A2(elm$core$Debug$log, 'dist', dist) + model.velocity.dist,
-								rot: rot
-							}
+							movement: {dist: dist + model.velocity.dist, rot: rot}
 						}),
 					elm$core$Platform$Cmd$none);
 			case 'ScreenSize':
@@ -6104,6 +6193,7 @@ var author$project$Main$update = F2(
 							playerPos: _Utils_eq(
 								model.playerPos,
 								{angle: 0, x: 0, y: 0}) ? {angle: 0, x: (xZeroed * size) + halfSize, y: (yZeroed * size) + halfSize} : model.playerPos,
+							playerRadSize: size / 3,
 							screenSize: elm$core$Maybe$Just(
 								{height: h, width: w}),
 							tileSize: size
@@ -6415,7 +6505,7 @@ var author$project$Main$renderPlayer = function (model) {
 					A2(
 					joakin$elm_canvas$Canvas$circle,
 					_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
-					model.tileSize / 3)
+					model.playerRadSize)
 				])),
 			A2(
 			joakin$elm_canvas$Canvas$shapes,

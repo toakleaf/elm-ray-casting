@@ -71,6 +71,7 @@ getGridDimensions grid =
 
 type alias Model =
     { playerPos : Position
+    , playerRadSize : Float
     , movement : Polar
     , velocity : Polar
     , grid : Grid
@@ -84,8 +85,9 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { playerPos = { x = 0, y = 0, angle = 0 }
+      , playerRadSize = 10
       , movement = { dist = 0, rot = 0 }
-      , velocity = { dist = 2, rot = 1 }
+      , velocity = { dist = 3, rot = 3 }
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -165,6 +167,39 @@ indiciesOfGrid num grid =
         get2DIndiciesFrom1DList width i
 
 
+hasCollision : Model -> Position -> Bool
+hasCollision model pos =
+    let
+        rad =
+            model.playerRadSize
+
+        subjectCorners =
+            [ ( floor (pos.x - rad), floor (pos.y - rad) ) -- left top
+            , ( ceiling (pos.x + rad), floor (pos.y - rad) ) -- right top
+            , ( ceiling (pos.x + rad), ceiling (pos.y + rad) ) -- right bottom
+            , ( floor (pos.x - rad), ceiling (pos.y + rad) ) -- left bottom
+            ]
+
+        check : ( Int, Int ) -> Bool
+        check tup =
+            let
+                x =
+                    Tuple.first tup // model.tileSize
+
+                y =
+                    Tuple.second tup // model.tileSize
+
+                cell =
+                    List.drop y model.grid |> List.take 1 |> List.concat |> List.drop x
+
+                item =
+                    List.head cell
+            in
+            item /= Just 0
+    in
+    List.map check subjectCorners |> List.any (\a -> a == True)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
@@ -179,9 +214,17 @@ update msg model =
     in
     case msg of
         Frame _ ->
-            ( { model
-                | playerPos = { x = x + dx, y = y + dy, angle = angle + model.movement.rot }
-              }
+            let
+                collisions =
+                    hasCollision model { x = x + dx, y = y + dy, angle = angle }
+            in
+            ( if collisions /= True then
+                { model
+                    | playerPos = { x = x + dx, y = y + dy, angle = angle + model.movement.rot }
+                }
+
+              else
+                model
             , Cmd.none
             )
 
@@ -240,6 +283,7 @@ update msg model =
 
                     else
                         model.playerPos
+                , playerRadSize = toFloat size / 3
               }
             , Cmd.none
             )
@@ -365,7 +409,7 @@ renderPlayer model =
         ( dx, dy ) =
             fromPolar ( lineLength, degrees model.playerPos.angle )
     in
-    [ shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) (toFloat model.tileSize / 3) ]
+    [ shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) model.playerRadSize ]
     , shapes
         [ stroke Color.blue
         , lineWidth 5
