@@ -470,7 +470,7 @@ horizontalIntercept : Model -> Position -> Maybe ( Float, Float ) -> Maybe ( Flo
 horizontalIntercept model { x, y, angle } step =
     let
         size =
-            toFloat model.tileSize
+            Debug.log "SSSSSSSSSSSTARTTTTTTTTTTTTTTTT" (toFloat model.tileSize)
 
         row =
             if angle < 180 then
@@ -481,35 +481,54 @@ horizontalIntercept model { x, y, angle } step =
                 floor ((y - 1) / size)
 
         ( top, bottom ) =
-            ( toFloat row * size, toFloat row * size + size )
+            Debug.log "top/bot" ( toFloat row * size, toFloat row * size + size )
 
         ( newX, newY ) =
             case step of
                 Nothing ->
                     if angle > 0 && angle <= 180 then
                         -- values account for +/- changes w/ quadrants
-                        ( x + (bottom - y) / tan (degrees angle), bottom )
+                        Debug.log "DOWN" ( x + (bottom - y) / tan (degrees angle), bottom )
 
                     else
-                        ( x - (y - top) / tan (degrees angle), top )
+                        Debug.log "UP" ( x - (y - top) / tan (degrees angle), top )
 
                 Just tup ->
+                    -- if angle > 0 && angle <= 180 then
                     ( Tuple.first tup + x, Tuple.second tup + y )
 
+        -- else
+        --     ( x - Tuple.first tup, y - Tuple.second tup )
         ( newCol, newRow ) =
             if angle < 180 then
-                ( floor (newX / size), floor (newY / size) )
+                Debug.log "NEWWWW COOOOL" ( floor (Debug.log "xxxxxxxxxxxxxx" newX / size), floor (newY / size) )
 
             else
-                -- slight offset so we are colliding with propper row as 0 is first index in next row
-                ( floor (newX / size), floor ((newY - 1) / size) )
+                ( floor (newX / size), floor (newY / size) - 1 )
 
         nextStep =
-            if abs (round (newY - y)) == round size then
+            if abs (round (Debug.log "**********" newY - Debug.log "%%%%%%%%%%%%%%" y)) == round size then
                 Just ( newX - x, newY - y )
+                -- else if abs (round (y)) == 0 then
+                --     Just ( newX - x, -size )
+                --     -- Just ( x - newX, y - newY )
+                -- else if abs (round (y - newY)) == round size then
+                --     Just ( newX - x, y - newY )
 
             else
                 Nothing
+
+        test =
+            Debug.log "NextStep" nextStep
+
+        test6 =
+            Debug.log "Step" step
+
+        test2 =
+            tileAtCoords model.grid (Debug.log "!!!! THE TILE !!!!" ( newCol, newRow ))
+
+        test3 =
+            Debug.log "!!!! CHECK TILE !!!!" test2
     in
     if newCol < 0 || newCol >= model.gridDimensions.width || newRow < 0 || newRow >= model.gridDimensions.height || angle == 0 then
         Debug.log "OUT OF BOUNDS" Nothing

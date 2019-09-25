@@ -5168,6 +5168,7 @@ var author$project$Main$init = function (_n0) {
 			numRays: 30,
 			playerPos: {angle: 0, x: 0, y: 0},
 			playerRadSize: 10,
+			rays: _List_Nil,
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32,
 			velocity: {dist: 3, rot: 3}
@@ -5794,28 +5795,6 @@ var author$project$Main$subscriptions = function (model) {
 				elm$browser$Browser$Events$onAnimationFrameDelta(author$project$Main$Frame)
 			]));
 };
-var elm$core$Basics$neq = _Utils_notEqual;
-var elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5974,54 +5953,137 @@ var elm$core$List$take = F2(
 	function (n, list) {
 		return A3(elm$core$List$takeFast, 0, n, list);
 	});
-var elm$core$Tuple$second = function (_n0) {
-	var y = _n0.b;
-	return y;
-};
-var author$project$Main$hasCollision = F2(
-	function (model, pos) {
-		var rad = model.playerRadSize;
-		var subjectCorners = _List_fromArray(
-			[
-				_Utils_Tuple2(
-				elm$core$Basics$floor(pos.x - rad),
-				elm$core$Basics$floor(pos.y - rad)),
-				_Utils_Tuple2(
-				elm$core$Basics$ceiling(pos.x + rad),
-				elm$core$Basics$floor(pos.y - rad)),
-				_Utils_Tuple2(
-				elm$core$Basics$ceiling(pos.x + rad),
-				elm$core$Basics$ceiling(pos.y + rad)),
-				_Utils_Tuple2(
-				elm$core$Basics$floor(pos.x - rad),
-				elm$core$Basics$ceiling(pos.y + rad))
-			]);
-		var check = function (tup) {
-			var y = (tup.b / model.tileSize) | 0;
-			var x = (tup.a / model.tileSize) | 0;
-			var cell = A2(
+var author$project$Main$tileAtCoords = F2(
+	function (grid, _n0) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return elm$core$List$head(
+			A2(
 				elm$core$List$drop,
 				x,
 				elm$core$List$concat(
 					A2(
 						elm$core$List$take,
 						1,
-						A2(elm$core$List$drop, y, model.grid))));
-			var item = elm$core$List$head(cell);
-			return !_Utils_eq(
-				item,
-				elm$core$Maybe$Just(0));
-		};
+						A2(elm$core$List$drop, y, grid)))));
+	});
+var elm$core$Tuple$second = function (_n0) {
+	var y = _n0.b;
+	return y;
+};
+var author$project$Main$tileAtPos = F2(
+	function (model, tup) {
+		return A2(
+			author$project$Main$tileAtCoords,
+			model.grid,
+			_Utils_Tuple2((tup.a / model.tileSize) | 0, (tup.b / model.tileSize) | 0));
+	});
+var elm$core$Basics$neq = _Utils_notEqual;
+var elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var author$project$Main$hasCollision = F2(
+	function (model, tups) {
 		return A2(
 			elm$core$List$any,
 			function (a) {
-				return a;
+				return !_Utils_eq(
+					a,
+					elm$core$Maybe$Just(0));
 			},
-			A2(elm$core$List$map, check, subjectCorners));
+			A2(
+				elm$core$List$map,
+				function (t) {
+					return A2(author$project$Main$tileAtPos, model, t);
+				},
+				tups));
 	});
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var elm$core$Basics$pi = _Basics_pi;
+var elm$core$Basics$degrees = function (angleInDegrees) {
+	return (angleInDegrees * elm$core$Basics$pi) / 180;
+};
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$tan = _Basics_tan;
+var elm$core$Debug$log = _Debug_log;
+var author$project$Main$horizontalIntercept = F3(
+	function (model, _n0, step) {
+		var x = _n0.x;
+		var y = _n0.y;
+		var angle = _n0.angle;
+		var size = model.tileSize;
+		var row = (angle < 180) ? elm$core$Basics$floor(y / size) : elm$core$Basics$floor((y - 1) / size);
+		var _n1 = _Utils_Tuple2(row * size, (row * size) + size);
+		var top = _n1.a;
+		var bottom = _n1.b;
+		var _n2 = function () {
+			if (step.$ === 'Nothing') {
+				return ((angle > 0) && (angle <= 180)) ? _Utils_Tuple2(
+					x + ((bottom - y) / elm$core$Basics$tan(
+						elm$core$Basics$degrees(angle))),
+					bottom) : _Utils_Tuple2(
+					x - ((y - top) / elm$core$Basics$tan(
+						elm$core$Basics$degrees(angle))),
+					top);
+			} else {
+				var tup = step.a;
+				return _Utils_Tuple2(tup.a + x, tup.b + y);
+			}
+		}();
+		var newX = _n2.a;
+		var newY = _n2.b;
+		var _n4 = (angle < 180) ? _Utils_Tuple2(
+			elm$core$Basics$floor(newX / size),
+			elm$core$Basics$floor(newY / size)) : _Utils_Tuple2(
+			elm$core$Basics$floor(newX / size),
+			elm$core$Basics$floor((newY - 1) / size));
+		var newCol = _n4.a;
+		var newRow = _n4.b;
+		var nextStep = _Utils_eq(
+			elm$core$Basics$abs(
+				elm$core$Basics$round(newY - y)),
+			elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
+			_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
+		return ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || (!angle))))) ? A2(elm$core$Debug$log, 'OUT OF BOUNDS', elm$core$Maybe$Nothing) : ((!_Utils_eq(
+			A2(
+				author$project$Main$tileAtCoords,
+				model.grid,
+				_Utils_Tuple2(newCol, newRow)),
+			elm$core$Maybe$Just(0))) ? A3(
+			elm$core$Debug$log,
+			'JUST X, Y',
+			elm$core$Maybe$Just,
+			_Utils_Tuple2(newX, newY)) : A5(
+			elm$core$Debug$log,
+			'REPEAT',
+			author$project$Main$horizontalIntercept,
+			model,
+			{angle: angle, x: newX, y: newY},
+			nextStep));
+	});
 var author$project$Main$get2DIndiciesFrom1DList = F2(
 	function (width, index) {
 		var row = (index / width) | 0;
@@ -6066,9 +6128,13 @@ var author$project$Main$indiciesOfGrid = F2(
 			elm$core$List$concat(grid));
 		return (i < 0) ? _Utils_Tuple2(-1, -1) : A2(author$project$Main$get2DIndiciesFrom1DList, width, i);
 	});
-var elm$core$Basics$pi = _Basics_pi;
-var elm$core$Basics$degrees = function (angleInDegrees) {
-	return (angleInDegrees * elm$core$Basics$pi) / 180;
+var author$project$Main$remainderByFloat = F2(
+	function (denom, numer) {
+		return numer - (denom * elm$core$Basics$floor(numer / denom));
+	});
+var author$project$Main$normalizeDeg = function (ang) {
+	var a = A2(author$project$Main$remainderByFloat, 360, ang);
+	return (a < 0) ? (a + 360) : a;
 };
 var elm$core$Basics$cos = _Basics_cos;
 var elm$core$Basics$sin = _Basics_sin;
@@ -6098,31 +6164,66 @@ var author$project$Main$update = F2(
 		var dy = _n2.b;
 		switch (msg.$) {
 			case 'Frame':
+				var rad = model.playerRadSize;
+				var playerCorners = F2(
+					function (posX, posY) {
+						return _List_fromArray(
+							[
+								_Utils_Tuple2(
+								elm$core$Basics$floor(posX - rad),
+								elm$core$Basics$floor(posY - rad)),
+								_Utils_Tuple2(
+								elm$core$Basics$ceiling(posX + rad),
+								elm$core$Basics$floor(posY - rad)),
+								_Utils_Tuple2(
+								elm$core$Basics$ceiling(posX + rad),
+								elm$core$Basics$ceiling(posY + rad)),
+								_Utils_Tuple2(
+								elm$core$Basics$floor(posX - rad),
+								elm$core$Basics$ceiling(posY + rad))
+							]);
+					});
 				var collisionY = A2(
 					author$project$Main$hasCollision,
 					model,
-					{angle: angle, x: x, y: y + dy});
+					A2(playerCorners, x, y + dy));
 				var collisionX = A2(
 					author$project$Main$hasCollision,
 					model,
-					{angle: angle, x: x + dx, y: y});
+					A2(playerCorners, x + dx, y));
 				return _Utils_Tuple2(
 					(collisionX && collisionY) ? _Utils_update(
 						model,
 						{
-							playerPos: {angle: angle + model.movement.rot, x: x, y: y}
+							playerPos: {
+								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								x: x,
+								y: y
+							}
 						}) : (collisionX ? _Utils_update(
 						model,
 						{
-							playerPos: {angle: angle + model.movement.rot, x: x, y: y + dy}
+							playerPos: {
+								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								x: x,
+								y: y + dy
+							}
 						}) : (collisionY ? _Utils_update(
 						model,
 						{
-							playerPos: {angle: angle + model.movement.rot, x: x + dx, y: y}
+							playerPos: {
+								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								x: x + dx,
+								y: y
+							}
 						}) : _Utils_update(
 						model,
 						{
-							playerPos: {angle: angle + model.movement.rot, x: x + dx, y: y + dy}
+							playerPos: {
+								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								x: x + dx,
+								y: y + dy
+							}
 						}))),
 					elm$core$Platform$Cmd$none);
 			case 'TurnLeft':
@@ -6218,6 +6319,8 @@ var author$project$Main$update = F2(
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
+				var test = A3(author$project$Main$horizontalIntercept, model, model.playerPos, elm$core$Maybe$Nothing);
+				var test2 = A2(elm$core$Debug$log, 'RESULT', test);
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
