@@ -350,7 +350,7 @@ update msg model =
         Other ->
             let
                 test =
-                    horizontalIntercept model model.playerPos Nothing
+                    verticalIntercept model model.playerPos Nothing
 
                 test2 =
                     Debug.log "RESULT" test
@@ -473,7 +473,7 @@ horizontalIntercept model { x, y, angle } step =
             toFloat model.tileSize
 
         row =
-            if angle < 180 then
+            if angle > 0 && angle <= 180 then
                 floor (y / size)
 
             else
@@ -497,7 +497,7 @@ horizontalIntercept model { x, y, angle } step =
                     ( Tuple.first tup + x, Tuple.second tup + y )
 
         ( newCol, newRow ) =
-            if angle < 180 then
+            if angle > 0 && angle <= 180 then
                 ( floor (newX / size), floor (newY / size) )
 
             else
@@ -511,14 +511,14 @@ horizontalIntercept model { x, y, angle } step =
             else
                 Nothing
     in
-    if newCol < 0 || newCol >= model.gridDimensions.width || newRow < 0 || newRow >= model.gridDimensions.height || angle == 0 then
-        Debug.log "OUT OF BOUNDS" Nothing
+    if newCol < 0 || newCol >= model.gridDimensions.width || newRow < 0 || newRow >= model.gridDimensions.height || angle == 0 || angle == 180 then
+        Nothing
 
     else if tileAtCoords model.grid ( newCol, newRow ) /= Just 0 then
-        Debug.log "JUST X, Y" Just ( newX, newY )
+        Just ( newX, newY )
 
     else
-        Debug.log "REPEAT" horizontalIntercept model { x = newX, y = newY, angle = angle } nextStep
+        horizontalIntercept model { x = newX, y = newY, angle = angle } nextStep
 
 
 verticalIntercept : Model -> Position -> Maybe ( Float, Float ) -> Maybe ( Float, Float )
@@ -527,8 +527,13 @@ verticalIntercept model { x, y, angle } step =
         size =
             toFloat model.tileSize
 
-        ( col, row ) =
-            ( floor (x / size), floor (y / size) )
+        col =
+            if angle > 90 && angle <= 270 then
+                -- slight offset so we are colliding with propper row as 0 is first index in next row
+                floor ((x - 1) / size)
+
+            else
+                floor (x / size)
 
         ( left, right ) =
             ( toFloat col * size, toFloat col * size + size )
@@ -541,10 +546,18 @@ verticalIntercept model { x, y, angle } step =
                         ( left, y - (x - left) * tan (degrees angle) )
 
                     else
-                        ( right, y + (right - x) * tan (degrees angle) )
+                        Debug.log "New Right" ( right, y + (right - x) * tan (degrees angle) )
 
                 Just tup ->
                     ( Tuple.first tup + x, Tuple.second tup + y )
+
+        ( newCol, newRow ) =
+            if angle > 90 && angle <= 270 then
+                -- slight offset so we are colliding with propper row as 0 is first index in next row
+                Debug.log "Col/Row Left" ( floor ((newX - 1) / size), floor (newY / size) )
+
+            else
+                Debug.log "Col/Row Right" ( floor (newX / size), floor (newY / size) )
 
         nextStep =
             if abs (round (newX - x)) == round size then
@@ -553,14 +566,14 @@ verticalIntercept model { x, y, angle } step =
             else
                 Nothing
     in
-    if col < 0 || col >= model.gridDimensions.width || row < 0 || row >= model.gridDimensions.height then
-        Nothing
+    if newCol < 0 || newCol >= model.gridDimensions.width || newRow < 0 || newRow >= model.gridDimensions.height || angle == 90 || angle == 270 then
+        Debug.log "OUT OF BOUNDS" Nothing
 
-    else if tileAtPos model ( floor (newX / size), floor (newY / size) ) /= Just 0 then
-        Just ( x, y )
+    else if tileAtCoords model.grid ( newCol, newRow ) /= Just 0 then
+        Debug.log "RESULT ~~~~~~~" Just ( newX, newY )
 
     else
-        verticalIntercept model { x = newX, y = newY, angle = angle } nextStep
+        Debug.log "REPEAT" verticalIntercept model { x = newX, y = newY, angle = angle } nextStep
 
 
 

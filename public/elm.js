@@ -6019,71 +6019,6 @@ var author$project$Main$hasCollision = F2(
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var elm$core$Basics$pi = _Basics_pi;
-var elm$core$Basics$degrees = function (angleInDegrees) {
-	return (angleInDegrees * elm$core$Basics$pi) / 180;
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Basics$tan = _Basics_tan;
-var elm$core$Debug$log = _Debug_log;
-var author$project$Main$horizontalIntercept = F3(
-	function (model, _n0, step) {
-		var x = _n0.x;
-		var y = _n0.y;
-		var angle = _n0.angle;
-		var size = model.tileSize;
-		var row = (angle < 180) ? elm$core$Basics$floor(y / size) : elm$core$Basics$floor((y - 1) / size);
-		var _n1 = _Utils_Tuple2(row * size, (row * size) + size);
-		var top = _n1.a;
-		var bottom = _n1.b;
-		var _n2 = function () {
-			if (step.$ === 'Nothing') {
-				return ((angle > 0) && (angle <= 180)) ? _Utils_Tuple2(
-					x + ((bottom - y) / elm$core$Basics$tan(
-						elm$core$Basics$degrees(angle))),
-					bottom) : _Utils_Tuple2(
-					x - ((y - top) / elm$core$Basics$tan(
-						elm$core$Basics$degrees(angle))),
-					top);
-			} else {
-				var tup = step.a;
-				return _Utils_Tuple2(tup.a + x, tup.b + y);
-			}
-		}();
-		var newX = _n2.a;
-		var newY = _n2.b;
-		var _n4 = (angle < 180) ? _Utils_Tuple2(
-			elm$core$Basics$floor(newX / size),
-			elm$core$Basics$floor(newY / size)) : _Utils_Tuple2(
-			elm$core$Basics$floor(newX / size),
-			elm$core$Basics$floor((newY - 1) / size));
-		var newCol = _n4.a;
-		var newRow = _n4.b;
-		var nextStep = _Utils_eq(
-			elm$core$Basics$abs(
-				elm$core$Basics$round(newY - y)),
-			elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
-			_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
-		return ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || (!angle))))) ? A2(elm$core$Debug$log, 'OUT OF BOUNDS', elm$core$Maybe$Nothing) : ((!_Utils_eq(
-			A2(
-				author$project$Main$tileAtCoords,
-				model.grid,
-				_Utils_Tuple2(newCol, newRow)),
-			elm$core$Maybe$Just(0))) ? A3(
-			elm$core$Debug$log,
-			'JUST X, Y',
-			elm$core$Maybe$Just,
-			_Utils_Tuple2(newX, newY)) : A5(
-			elm$core$Debug$log,
-			'REPEAT',
-			author$project$Main$horizontalIntercept,
-			model,
-			{angle: angle, x: newX, y: newY},
-			nextStep));
-	});
 var author$project$Main$get2DIndiciesFrom1DList = F2(
 	function (width, index) {
 		var row = (index / width) | 0;
@@ -6136,6 +6071,80 @@ var author$project$Main$normalizeDeg = function (ang) {
 	var a = A2(author$project$Main$remainderByFloat, 360, ang);
 	return (a < 0) ? (a + 360) : a;
 };
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var elm$core$Basics$pi = _Basics_pi;
+var elm$core$Basics$degrees = function (angleInDegrees) {
+	return (angleInDegrees * elm$core$Basics$pi) / 180;
+};
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$tan = _Basics_tan;
+var elm$core$Debug$log = _Debug_log;
+var author$project$Main$verticalIntercept = F3(
+	function (model, _n0, step) {
+		var x = _n0.x;
+		var y = _n0.y;
+		var angle = _n0.angle;
+		var size = model.tileSize;
+		var col = ((angle > 90) && (angle <= 270)) ? elm$core$Basics$floor((x - 1) / size) : elm$core$Basics$floor(x / size);
+		var _n1 = _Utils_Tuple2(col * size, (col * size) + size);
+		var left = _n1.a;
+		var right = _n1.b;
+		var _n2 = function () {
+			if (step.$ === 'Nothing') {
+				return ((angle > 90) && (angle <= 270)) ? _Utils_Tuple2(
+					left,
+					y - ((x - left) * elm$core$Basics$tan(
+						elm$core$Basics$degrees(angle)))) : A2(
+					elm$core$Debug$log,
+					'New Right',
+					_Utils_Tuple2(
+						right,
+						y + ((right - x) * elm$core$Basics$tan(
+							elm$core$Basics$degrees(angle)))));
+			} else {
+				var tup = step.a;
+				return _Utils_Tuple2(tup.a + x, tup.b + y);
+			}
+		}();
+		var newX = _n2.a;
+		var newY = _n2.b;
+		var nextStep = _Utils_eq(
+			elm$core$Basics$abs(
+				elm$core$Basics$round(newX - x)),
+			elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
+			_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
+		var _n4 = ((angle > 90) && (angle <= 270)) ? A2(
+			elm$core$Debug$log,
+			'Col/Row Left',
+			_Utils_Tuple2(
+				elm$core$Basics$floor((newX - 1) / size),
+				elm$core$Basics$floor(newY / size))) : A2(
+			elm$core$Debug$log,
+			'Col/Row Right',
+			_Utils_Tuple2(
+				elm$core$Basics$floor(newX / size),
+				elm$core$Basics$floor(newY / size)));
+		var newCol = _n4.a;
+		var newRow = _n4.b;
+		return ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || ((angle === 90) || (angle === 270)))))) ? A2(elm$core$Debug$log, 'OUT OF BOUNDS', elm$core$Maybe$Nothing) : ((!_Utils_eq(
+			A2(
+				author$project$Main$tileAtCoords,
+				model.grid,
+				_Utils_Tuple2(newCol, newRow)),
+			elm$core$Maybe$Just(0))) ? A3(
+			elm$core$Debug$log,
+			'RESULT ~~~~~~~',
+			elm$core$Maybe$Just,
+			_Utils_Tuple2(newX, newY)) : A5(
+			elm$core$Debug$log,
+			'REPEAT',
+			author$project$Main$verticalIntercept,
+			model,
+			{angle: angle, x: newX, y: newY},
+			nextStep));
+	});
 var elm$core$Basics$cos = _Basics_cos;
 var elm$core$Basics$sin = _Basics_sin;
 var elm$core$Basics$fromPolar = function (_n0) {
@@ -6319,7 +6328,7 @@ var author$project$Main$update = F2(
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
-				var test = A3(author$project$Main$horizontalIntercept, model, model.playerPos, elm$core$Maybe$Nothing);
+				var test = A3(author$project$Main$verticalIntercept, model, model.playerPos, elm$core$Maybe$Nothing);
 				var test2 = A2(elm$core$Debug$log, 'RESULT', test);
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
