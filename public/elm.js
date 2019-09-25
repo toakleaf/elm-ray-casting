@@ -6090,16 +6090,6 @@ var author$project$Main$update = F2(
 		var _n0 = model.movement;
 		var dist = _n0.dist;
 		var rot = _n0.rot;
-		var _n1 = model.playerPos;
-		var x = _n1.x;
-		var y = _n1.y;
-		var angle = _n1.angle;
-		var _n2 = elm$core$Basics$fromPolar(
-			_Utils_Tuple2(
-				model.movement.dist,
-				elm$core$Basics$degrees(angle + model.movement.rot)));
-		var dx = _n2.a;
-		var dy = _n2.b;
 		switch (msg.$) {
 			case 'Frame':
 				var rad = model.playerRadSize;
@@ -6121,16 +6111,26 @@ var author$project$Main$update = F2(
 								elm$core$Basics$ceiling(posY + rad))
 							]);
 					});
-				var collisionY = A2(
-					author$project$Main$hasCollision,
-					model,
-					A2(playerCorners, x, y + dy));
+				var _n2 = model.playerPos;
+				var x = _n2.x;
+				var y = _n2.y;
+				var angle = _n2.angle;
+				var _n3 = elm$core$Basics$fromPolar(
+					_Utils_Tuple2(
+						model.movement.dist,
+						elm$core$Basics$degrees(angle + model.movement.rot)));
+				var dx = _n3.a;
+				var dy = _n3.b;
 				var collisionX = A2(
 					author$project$Main$hasCollision,
 					model,
 					A2(playerCorners, x + dx, y));
+				var collisionY = A2(
+					author$project$Main$hasCollision,
+					model,
+					A2(playerCorners, x, y + dy));
 				return _Utils_Tuple2(
-					(collisionX && collisionY) ? _Utils_update(
+					((!model.movement.dist) && (!model.movement.rot)) ? model : ((collisionX && collisionY) ? _Utils_update(
 						model,
 						{
 							playerPos: {
@@ -6162,7 +6162,7 @@ var author$project$Main$update = F2(
 								x: x + dx,
 								y: y + dy
 							}
-						}))),
+						})))),
 					elm$core$Platform$Cmd$none);
 			case 'TurnLeft':
 				return _Utils_Tuple2(

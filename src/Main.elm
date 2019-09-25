@@ -11,6 +11,7 @@ import Canvas.Settings.Text exposing (..)
 import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
+import Html.Lazy exposing (lazy, lazy4)
 import Json.Decode as Decode
 import Task
 
@@ -228,18 +229,18 @@ hasCollision model tups =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        { x, y, angle } =
-            model.playerPos
-
-        ( dx, dy ) =
-            fromPolar ( model.movement.dist, degrees (angle + model.movement.rot) )
-
         { dist, rot } =
             model.movement
     in
     case msg of
         Frame _ ->
             let
+                { x, y, angle } =
+                    model.playerPos
+
+                ( dx, dy ) =
+                    fromPolar ( model.movement.dist, degrees (angle + model.movement.rot) )
+
                 rad =
                     model.playerRadSize
 
@@ -257,7 +258,10 @@ update msg model =
                 collisionY =
                     hasCollision model (playerCorners x (y + dy))
             in
-            ( if collisionX && collisionY then
+            ( if model.movement.dist == 0 && model.movement.rot == 0 then
+                model
+
+              else if collisionX && collisionY then
                 { model
                     | playerPos = { x = x, y = y, angle = normalizeDeg (angle + model.movement.rot) }
                 }
