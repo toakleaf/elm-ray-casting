@@ -84,7 +84,6 @@ type alias Model =
     , velocity : Polar
     , fov : Float
     , numRays : Int
-    , rays : List Ray
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
@@ -101,7 +100,6 @@ init _ =
       , velocity = { dist = 3, rot = 3 }
       , fov = 100
       , numRays = 60
-      , rays = []
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
@@ -258,11 +256,6 @@ update msg model =
 
                 collisionY =
                     hasCollision model (playerCorners x (y + dy))
-
-                -- test =
-                --     horizontalIntercept model model.playerPos Nothing
-                -- test2 =
-                --     ( Debug.log "test" test, Debug.log "size" model.tileSize )
             in
             ( if collisionX && collisionY then
                 { model
@@ -347,12 +340,6 @@ update msg model =
             )
 
         Other ->
-            -- let
-            --     test =
-            --         verticalIntercept model model.playerPos Nothing
-            --     test2 =
-            --         Debug.log "RESULT" test
-            -- in
             ( model, Cmd.none )
 
 
@@ -645,8 +632,6 @@ renderRay model { angle, hit, len, hitVert } =
 renderPlayer : Model -> List Renderable
 renderPlayer model =
     let
-        -- ( dx, dy ) =
-        --     fromPolar ( lineLength, degrees model.playerPos.angle )
         pos =
             model.playerPos
 
@@ -654,7 +639,7 @@ renderPlayer model =
             model.fov / toFloat model.numRays
 
         angList =
-            List.range 0 model.numRays |> List.map (\n -> model.fov / 2 + model.playerPos.angle - stepSize * toFloat n)
+            List.range 0 model.numRays |> List.map (\n -> model.fov / 2 + model.playerPos.angle - stepSize * toFloat n) |> List.map normalizeDeg
 
         rayList =
             List.map (\ang -> castRay model { pos | angle = ang }) angList
@@ -665,18 +650,6 @@ renderPlayer model =
         ]
         (List.map (\ray -> renderRay model ray) rayList)
     , shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) model.playerRadSize ]
-
-    -- , shapes
-    --     [ stroke Color.blue
-    --     , lineWidth 5
-    --     ]
-    --     [ path ( model.playerPos.x, model.playerPos.y )
-    --         [ lineTo
-    --             ( model.playerPos.x + dx
-    --             , model.playerPos.y + dy
-    --             )
-    --         ]
-    --     ]
     ]
 
 

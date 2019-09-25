@@ -5168,7 +5168,6 @@ var author$project$Main$init = function (_n0) {
 			numRays: 60,
 			playerPos: {angle: 0, x: 0, y: 0},
 			playerRadSize: 10,
-			rays: _List_Nil,
 			screenSize: elm$core$Maybe$Nothing,
 			tileSize: 32,
 			velocity: {dist: 3, rot: 3}
@@ -6755,10 +6754,13 @@ var author$project$Main$renderPlayer = function (model) {
 	var pos = model.playerPos;
 	var angList = A2(
 		elm$core$List$map,
-		function (n) {
-			return ((model.fov / 2) + model.playerPos.angle) - (stepSize * n);
-		},
-		A2(elm$core$List$range, 0, model.numRays));
+		author$project$Main$normalizeDeg,
+		A2(
+			elm$core$List$map,
+			function (n) {
+				return ((model.fov / 2) + model.playerPos.angle) - (stepSize * n);
+			},
+			A2(elm$core$List$range, 0, model.numRays)));
 	var rayList = A2(
 		elm$core$List$map,
 		function (ang) {
