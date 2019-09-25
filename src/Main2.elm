@@ -59,18 +59,17 @@ type alias Ray =
 
 tileMap : Grid
 tileMap =
-    [ [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 ]
-    , [ 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 ]
-    , [ 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
-    , [ 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1 ]
-    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
-    , [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+    [ [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 ]
+    , [ 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1 ]
+    , [ 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
+    , [ 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1 ]
+    , [ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ]
+    , [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
     ]
 
 
@@ -89,11 +88,6 @@ type alias Model =
     , grid : Grid
     , gridDimensions : Dimensions
     , tileSize : Int
-    , mapPos : Position
-    , mapScale : Float
-    , wallScale : Float
-    , wallHeight : Int
-    , sliceWidth : Float
     , canvasSize : Maybe Dimensions
     , screenSize : Maybe Dimensions
     }
@@ -104,17 +98,12 @@ init _ =
     ( { playerPos = { x = 0, y = 0, angle = 0 }
       , playerRadSize = 10
       , movement = { dist = 0, rot = 0 }
-      , velocity = { dist = 3, rot = 2 }
-      , fov = 60
-      , numRays = 2
+      , velocity = { dist = 3, rot = 3 }
+      , fov = 100
+      , numRays = 60
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
       , tileSize = 32
-      , mapPos = { x = 0, y = 0, angle = 0 }
-      , mapScale = 0.25
-      , wallScale = 0.6
-      , wallHeight = 32
-      , sliceWidth = 3
       , canvasSize = Nothing
       , screenSize = Nothing
       }
@@ -320,8 +309,11 @@ update msg model =
 
         ScreenSize w h ->
             let
-                ( wide, tall ) =
-                    ( w // model.gridDimensions.width, h // model.gridDimensions.height )
+                wide =
+                    w // model.gridDimensions.width
+
+                tall =
+                    h // model.gridDimensions.height
 
                 size =
                     if wide * model.gridDimensions.height < h then
@@ -347,8 +339,6 @@ update msg model =
                     else
                         model.playerPos
                 , playerRadSize = toFloat size / 3
-                , numRays = floor (toFloat ((getGridDimensions tileMap).width * size) / model.sliceWidth)
-                , wallHeight = floor (toFloat ((getGridDimensions tileMap).width * size) * model.wallScale)
               }
             , Cmd.none
             )
@@ -421,6 +411,48 @@ clearMovement string =
 
 
 -- VIEW --
+
+
+clearScreen : Float -> Float -> Renderable
+clearScreen width height =
+    shapes [ fill Color.black ] [ rect ( 0, 0 ) width height ]
+
+
+makeTile : Float -> Position -> Model -> Int -> Int -> Renderable
+makeTile scale offset model index tileType =
+    let
+        fillColor =
+            case tileType of
+                0 ->
+                    Color.white
+
+                1 ->
+                    Color.red
+
+                _ ->
+                    Color.blue
+
+        ( x, y ) =
+            get2DIndiciesFrom1DList model.gridDimensions.width index
+    in
+    shapes
+        [ fill fillColor, stroke Color.black ]
+        [ rect
+            ( scale * toFloat (x * model.tileSize) + offset.x
+            , scale * toFloat (y * model.tileSize) + offset.y
+            )
+            (scale * toFloat model.tileSize)
+            (scale * toFloat model.tileSize)
+        ]
+
+
+renderMap : Model -> List Renderable
+renderMap model =
+    let
+        partialMakeTile =
+            makeTile 1 { x = 0, y = 0, angle = 0 } model
+    in
+    List.concat model.grid |> List.indexedMap partialMakeTile
 
 
 horizontalIntercept : Model -> Position -> Maybe ( Float, Float ) -> Maybe ( Float, Float )
@@ -592,19 +624,17 @@ renderRay model { angle, hit, len, hitVert } =
     let
         ( dx, dy ) =
             fromPolar ( len, degrees angle )
-
-        ( x, y ) =
-            ( model.playerPos.x * model.mapScale + model.mapPos.x, model.playerPos.y * model.mapScale + model.mapPos.y )
-
-        ( x2, y2 ) =
-            ( (model.playerPos.x + dx) * model.mapScale + model.mapPos.x, (model.playerPos.y + dy) * model.mapScale + model.mapPos.y )
     in
-    path ( x, y )
-        [ lineTo ( x2, y2 ) ]
+    path ( model.playerPos.x, model.playerPos.y )
+        [ lineTo
+            ( model.playerPos.x + dx
+            , model.playerPos.y + dy
+            )
+        ]
 
 
-getRayList : Model -> List Ray
-getRayList model =
+renderPlayer : Model -> List Renderable
+renderPlayer model =
     let
         pos =
             model.playerPos
@@ -613,119 +643,22 @@ getRayList model =
             model.fov / toFloat model.numRays
 
         angList =
-            List.range 0 model.numRays |> List.map (\n -> model.fov / 2 + pos.angle - stepSize * toFloat n) |> List.map normalizeDeg
-    in
-    List.map (\ang -> castRay model { pos | angle = ang }) angList
+            List.range 0 model.numRays |> List.map (\n -> model.fov / 2 + model.playerPos.angle - stepSize * toFloat n) |> List.map normalizeDeg
 
-
-renderPlayer : Model -> List Ray -> List Renderable
-renderPlayer model rayList =
-    let
-        ( x, y ) =
-            ( model.playerPos.x * model.mapScale + model.mapPos.x, model.playerPos.y * model.mapScale + model.mapPos.y )
+        rayList =
+            List.map (\ang -> castRay model { pos | angle = ang }) angList
     in
     [ shapes
         [ stroke Color.lightBlue
         , lineWidth 1
         ]
         (List.map (\ray -> renderRay model ray) rayList)
-    , shapes [ fill Color.blue ] [ circle ( x, y ) (model.playerRadSize * model.mapScale) ]
+    , shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) model.playerRadSize ]
     ]
-
-
-render3D : Model -> List Ray -> List Renderable
-render3D model rayList =
-    let
-        slice : Int -> Ray -> Renderable
-        slice index { len, hitVert, angle } =
-            let
-                ( canvasW, canvasH ) =
-                    case model.canvasSize of
-                        Nothing ->
-                            ( 0, 0 )
-
-                        Just size ->
-                            ( toFloat size.width, toFloat size.height )
-
-                distToProjPlane =
-                    (canvasW / 2) / tan (model.fov / 2)
-
-                unskewedRayLength =
-                    len * cos (degrees angle - degrees model.playerPos.angle)
-
-                height =
-                    toFloat model.wallHeight / unskewedRayLength * distToProjPlane
-
-                alpha =
-                    170 / unskewedRayLength
-
-                color =
-                    if hitVert then
-                        Color.rgba 0.969 0.949 0.925 alpha
-
-                    else
-                        Color.rgba 0.925 0.871 0.816 alpha
-            in
-            shapes [ fill color ]
-                [ rect
-                    ( toFloat index * model.sliceWidth
-                    , canvasH / 2 - height / 2
-                    )
-                    model.sliceWidth
-                    height
-                ]
-    in
-    List.indexedMap slice (List.reverse rayList)
-
-
-makeTile : Float -> Position -> Model -> Int -> Int -> Renderable
-makeTile scale offset model index tileType =
-    let
-        fillColor =
-            case tileType of
-                0 ->
-                    Color.white
-
-                1 ->
-                    Color.red
-
-                _ ->
-                    Color.blue
-
-        ( x, y ) =
-            get2DIndiciesFrom1DList model.gridDimensions.width index
-    in
-    shapes
-        [ fill fillColor, stroke Color.black ]
-        [ rect
-            ( scale * toFloat (x * model.tileSize) + offset.x
-            , scale * toFloat (y * model.tileSize) + offset.y
-            )
-            (scale * toFloat model.tileSize)
-            (scale * toFloat model.tileSize)
-        ]
-
-
-renderMap : Model -> List Renderable
-renderMap model =
-    let
-        partialMakeTile =
-            makeTile model.mapScale model.mapPos model
-    in
-    List.concat model.grid |> List.indexedMap partialMakeTile
-
-
-clearScreen : Float -> Float -> Renderable
-clearScreen width height =
-    shapes [ fill Color.black ] [ rect ( 0, 0 ) width height ]
 
 
 view : Model -> Html Msg
 view model =
-    let
-        rayList =
-            getRayList model
-    in
     case model.canvasSize of
         Just dimensions ->
             div
@@ -738,9 +671,8 @@ view model =
                     ( dimensions.width, dimensions.height )
                     []
                     (clearScreen (toFloat dimensions.width) (toFloat dimensions.height)
-                        :: render3D model rayList
-                        ++ renderMap model
-                        ++ renderPlayer model rayList
+                        :: renderMap model
+                        ++ renderPlayer model
                     )
                 ]
 

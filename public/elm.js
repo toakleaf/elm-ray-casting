@@ -4463,27 +4463,29 @@ var author$project$Main$getGridDimensions = function (grid) {
 var author$project$Main$tileMap = _List_fromArray(
 	[
 		_List_fromArray(
-		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
 		_List_fromArray(
-		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]),
+		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]),
 		_List_fromArray(
-		[1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1]),
+		[1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]),
 		_List_fromArray(
-		[1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1]),
+		[1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1]),
 		_List_fromArray(
-		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1]),
+		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1]),
 		_List_fromArray(
-		[1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1]),
+		[1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1]),
 		_List_fromArray(
-		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
 		_List_fromArray(
-		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
 		_List_fromArray(
-		[1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1]),
+		[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
 		_List_fromArray(
-		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+		[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]),
 		_List_fromArray(
-		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+		[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+		_List_fromArray(
+		[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
 	]);
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
@@ -5161,16 +5163,21 @@ var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
 		{
 			canvasSize: elm$core$Maybe$Nothing,
-			fov: 100,
+			fov: 60,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
+			mapPos: {angle: 0, x: 0, y: 0},
+			mapScale: 0.25,
 			movement: {dist: 0, rot: 0},
-			numRays: 60,
+			numRays: 2,
 			playerPos: {angle: 0, x: 0, y: 0},
 			playerRadSize: 10,
 			screenSize: elm$core$Maybe$Nothing,
+			sliceWidth: 3,
 			tileSize: 32,
-			velocity: {dist: 3, rot: 3}
+			velocity: {dist: 3, rot: 2},
+			wallHeight: 32,
+			wallScale: 0.6
 		},
 		A2(
 			elm$core$Task$perform,
@@ -6117,8 +6124,8 @@ var author$project$Main$update = F2(
 				var angle = _n2.angle;
 				var _n3 = elm$core$Basics$fromPolar(
 					_Utils_Tuple2(
-						model.movement.dist,
-						elm$core$Basics$degrees(angle + model.movement.rot)));
+						dist,
+						elm$core$Basics$degrees(angle + rot)));
 				var dx = _n3.a;
 				var dy = _n3.b;
 				var collisionX = A2(
@@ -6130,11 +6137,11 @@ var author$project$Main$update = F2(
 					model,
 					A2(playerCorners, x, y + dy));
 				return _Utils_Tuple2(
-					((!model.movement.dist) && (!model.movement.rot)) ? model : ((collisionX && collisionY) ? _Utils_update(
+					((!dist) && (!rot)) ? model : ((collisionX && collisionY) ? _Utils_update(
 						model,
 						{
 							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								angle: author$project$Main$normalizeDeg(angle + rot),
 								x: x,
 								y: y
 							}
@@ -6142,7 +6149,7 @@ var author$project$Main$update = F2(
 						model,
 						{
 							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								angle: author$project$Main$normalizeDeg(angle + rot),
 								x: x,
 								y: y + dy
 							}
@@ -6150,7 +6157,7 @@ var author$project$Main$update = F2(
 						model,
 						{
 							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								angle: author$project$Main$normalizeDeg(angle + rot),
 								x: x + dx,
 								y: y
 							}
@@ -6158,7 +6165,7 @@ var author$project$Main$update = F2(
 						model,
 						{
 							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + model.movement.rot),
+								angle: author$project$Main$normalizeDeg(angle + rot),
 								x: x + dx,
 								y: y + dy
 							}
@@ -6231,13 +6238,14 @@ var author$project$Main$update = F2(
 			case 'ScreenSize':
 				var w = msg.a;
 				var h = msg.b;
-				var wide = (w / model.gridDimensions.width) | 0;
-				var tall = (h / model.gridDimensions.height) | 0;
-				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
-				var halfSize = (size / 2) | 0;
 				var _n4 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
 				var xZeroed = _n4.a;
 				var yZeroed = _n4.b;
+				var _n5 = _Utils_Tuple2((w / model.gridDimensions.width) | 0, (h / model.gridDimensions.height) | 0);
+				var wide = _n5.a;
+				var tall = _n5.b;
+				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
+				var halfSize = (size / 2) | 0;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -6247,13 +6255,17 @@ var author$project$Main$update = F2(
 									height: author$project$Main$getGridDimensions(author$project$Main$tileMap).height * size,
 									width: author$project$Main$getGridDimensions(author$project$Main$tileMap).width * size
 								}),
+							numRays: elm$core$Basics$floor(
+								(author$project$Main$getGridDimensions(author$project$Main$tileMap).width * size) / model.sliceWidth),
 							playerPos: _Utils_eq(
 								model.playerPos,
 								{angle: 0, x: 0, y: 0}) ? {angle: 0, x: (xZeroed * size) + halfSize, y: (yZeroed * size) + halfSize} : model.playerPos,
 							playerRadSize: size / 3,
 							screenSize: elm$core$Maybe$Just(
 								{height: h, width: w}),
-							tileSize: size
+							tileSize: size,
+							wallHeight: elm$core$Basics$floor(
+								(author$project$Main$getGridDimensions(author$project$Main$tileMap).width * size) * model.wallScale)
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
@@ -6428,55 +6440,6 @@ var author$project$Main$clearScreen = F2(
 					height)
 				]));
 	});
-var avh4$elm_color$Color$blue = A4(avh4$elm_color$Color$RgbaSpace, 52 / 255, 101 / 255, 164 / 255, 1.0);
-var avh4$elm_color$Color$red = A4(avh4$elm_color$Color$RgbaSpace, 204 / 255, 0 / 255, 0 / 255, 1.0);
-var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
-var joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
-	return joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
-		joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
-};
-var author$project$Main$makeTile = F5(
-	function (scale, offset, model, index, tileType) {
-		var fillColor = function () {
-			switch (tileType) {
-				case 0:
-					return avh4$elm_color$Color$white;
-				case 1:
-					return avh4$elm_color$Color$red;
-				default:
-					return avh4$elm_color$Color$blue;
-			}
-		}();
-		var _n0 = A2(author$project$Main$get2DIndiciesFrom1DList, model.gridDimensions.width, index);
-		var x = _n0.a;
-		var y = _n0.b;
-		return A2(
-			joakin$elm_canvas$Canvas$shapes,
-			_List_fromArray(
-				[
-					joakin$elm_canvas$Canvas$Settings$fill(fillColor),
-					joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$black)
-				]),
-			_List_fromArray(
-				[
-					A3(
-					joakin$elm_canvas$Canvas$rect,
-					_Utils_Tuple2((scale * (x * model.tileSize)) + offset.x, (scale * (y * model.tileSize)) + offset.y),
-					scale * model.tileSize,
-					scale * model.tileSize)
-				]));
-	});
-var author$project$Main$renderMap = function (model) {
-	var partialMakeTile = A3(
-		author$project$Main$makeTile,
-		1,
-		{angle: 0, x: 0, y: 0},
-		model);
-	return A2(
-		elm$core$List$indexedMap,
-		partialMakeTile,
-		elm$core$List$concat(model.grid));
-};
 var elm$core$Basics$abs = function (n) {
 	return (n < 0) ? (-n) : n;
 };
@@ -6663,6 +6626,123 @@ var author$project$Main$castRay = F2(
 			len: A2(elm$core$Basics$min, hor.a, vert.a)
 		};
 	});
+var author$project$Main$getRayList = function (model) {
+	var stepSize = model.fov / model.numRays;
+	var pos = model.playerPos;
+	var angList = A2(
+		elm$core$List$map,
+		author$project$Main$normalizeDeg,
+		A2(
+			elm$core$List$map,
+			function (n) {
+				return ((model.fov / 2) + pos.angle) - (stepSize * n);
+			},
+			A2(elm$core$List$range, 0, model.numRays)));
+	return A2(
+		elm$core$List$map,
+		function (ang) {
+			return A2(
+				author$project$Main$castRay,
+				model,
+				_Utils_update(
+					pos,
+					{angle: ang}));
+		},
+		angList);
+};
+var avh4$elm_color$Color$rgba = F4(
+	function (r, g, b, a) {
+		return A4(avh4$elm_color$Color$RgbaSpace, r, g, b, a);
+	});
+var author$project$Main$render3D = F2(
+	function (model, rayList) {
+		var slice = F2(
+			function (index, _n2) {
+				var len = _n2.len;
+				var hitVert = _n2.hitVert;
+				var angle = _n2.angle;
+				var unskewedRayLength = len * elm$core$Basics$cos(
+					elm$core$Basics$degrees(angle) - elm$core$Basics$degrees(model.playerPos.angle));
+				var alpha = 170 / unskewedRayLength;
+				var color = hitVert ? A4(avh4$elm_color$Color$rgba, 0.969, 0.949, 0.925, alpha) : A4(avh4$elm_color$Color$rgba, 0.925, 0.871, 0.816, alpha);
+				var _n0 = function () {
+					var _n1 = model.canvasSize;
+					if (_n1.$ === 'Nothing') {
+						return _Utils_Tuple2(0, 0);
+					} else {
+						var size = _n1.a;
+						return _Utils_Tuple2(size.width, size.height);
+					}
+				}();
+				var canvasW = _n0.a;
+				var canvasH = _n0.b;
+				var distToProjPlane = (canvasW / 2) / elm$core$Basics$tan(model.fov / 2);
+				var height = (model.wallHeight / unskewedRayLength) * distToProjPlane;
+				return A2(
+					joakin$elm_canvas$Canvas$shapes,
+					_List_fromArray(
+						[
+							joakin$elm_canvas$Canvas$Settings$fill(color)
+						]),
+					_List_fromArray(
+						[
+							A3(
+							joakin$elm_canvas$Canvas$rect,
+							_Utils_Tuple2(index * model.sliceWidth, (canvasH / 2) - (height / 2)),
+							model.sliceWidth,
+							height)
+						]));
+			});
+		return A2(
+			elm$core$List$indexedMap,
+			slice,
+			elm$core$List$reverse(rayList));
+	});
+var avh4$elm_color$Color$blue = A4(avh4$elm_color$Color$RgbaSpace, 52 / 255, 101 / 255, 164 / 255, 1.0);
+var avh4$elm_color$Color$red = A4(avh4$elm_color$Color$RgbaSpace, 204 / 255, 0 / 255, 0 / 255, 1.0);
+var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
+var joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
+	return joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
+		joakin$elm_canvas$Canvas$Internal$Canvas$Stroke(color));
+};
+var author$project$Main$makeTile = F5(
+	function (scale, offset, model, index, tileType) {
+		var fillColor = function () {
+			switch (tileType) {
+				case 0:
+					return avh4$elm_color$Color$white;
+				case 1:
+					return avh4$elm_color$Color$red;
+				default:
+					return avh4$elm_color$Color$blue;
+			}
+		}();
+		var _n0 = A2(author$project$Main$get2DIndiciesFrom1DList, model.gridDimensions.width, index);
+		var x = _n0.a;
+		var y = _n0.b;
+		return A2(
+			joakin$elm_canvas$Canvas$shapes,
+			_List_fromArray(
+				[
+					joakin$elm_canvas$Canvas$Settings$fill(fillColor),
+					joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$black)
+				]),
+			_List_fromArray(
+				[
+					A3(
+					joakin$elm_canvas$Canvas$rect,
+					_Utils_Tuple2((scale * (x * model.tileSize)) + offset.x, (scale * (y * model.tileSize)) + offset.y),
+					scale * model.tileSize,
+					scale * model.tileSize)
+				]));
+	});
+var author$project$Main$renderMap = function (model) {
+	var partialMakeTile = A3(author$project$Main$makeTile, model.mapScale, model.mapPos, model);
+	return A2(
+		elm$core$List$indexedMap,
+		partialMakeTile,
+		elm$core$List$concat(model.grid));
+};
 var joakin$elm_canvas$Canvas$Internal$Canvas$LineTo = function (a) {
 	return {$: 'LineTo', a: a};
 };
@@ -6683,19 +6763,25 @@ var author$project$Main$renderRay = F2(
 		var hit = _n0.hit;
 		var len = _n0.len;
 		var hitVert = _n0.hitVert;
-		var _n1 = elm$core$Basics$fromPolar(
+		var _n1 = _Utils_Tuple2((model.playerPos.x * model.mapScale) + model.mapPos.x, (model.playerPos.y * model.mapScale) + model.mapPos.y);
+		var x = _n1.a;
+		var y = _n1.b;
+		var _n2 = elm$core$Basics$fromPolar(
 			_Utils_Tuple2(
 				len,
 				elm$core$Basics$degrees(angle)));
-		var dx = _n1.a;
-		var dy = _n1.b;
+		var dx = _n2.a;
+		var dy = _n2.b;
+		var _n3 = _Utils_Tuple2(((model.playerPos.x + dx) * model.mapScale) + model.mapPos.x, ((model.playerPos.y + dy) * model.mapScale) + model.mapPos.y);
+		var x2 = _n3.a;
+		var y2 = _n3.b;
 		return A2(
 			joakin$elm_canvas$Canvas$path,
-			_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
+			_Utils_Tuple2(x, y),
 			_List_fromArray(
 				[
 					joakin$elm_canvas$Canvas$lineTo(
-					_Utils_Tuple2(model.playerPos.x + dx, model.playerPos.y + dy))
+					_Utils_Tuple2(x2, y2))
 				]));
 	});
 var avh4$elm_color$Color$lightBlue = A4(avh4$elm_color$Color$RgbaSpace, 114 / 255, 159 / 255, 207 / 255, 1.0);
@@ -6749,59 +6835,41 @@ var joakin$elm_canvas$Canvas$Settings$Line$lineWidth = function (width) {
 	return joakin$elm_canvas$Canvas$Internal$Canvas$SettingCommand(
 		joakin$elm_canvas$Canvas$Internal$CustomElementJsonApi$lineWidth(width));
 };
-var author$project$Main$renderPlayer = function (model) {
-	var stepSize = model.fov / model.numRays;
-	var pos = model.playerPos;
-	var angList = A2(
-		elm$core$List$map,
-		author$project$Main$normalizeDeg,
-		A2(
-			elm$core$List$map,
-			function (n) {
-				return ((model.fov / 2) + model.playerPos.angle) - (stepSize * n);
-			},
-			A2(elm$core$List$range, 0, model.numRays)));
-	var rayList = A2(
-		elm$core$List$map,
-		function (ang) {
-			return A2(
-				author$project$Main$castRay,
-				model,
-				_Utils_update(
-					pos,
-					{angle: ang}));
-		},
-		angList);
-	return _List_fromArray(
-		[
-			A2(
-			joakin$elm_canvas$Canvas$shapes,
-			_List_fromArray(
-				[
-					joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$lightBlue),
-					joakin$elm_canvas$Canvas$Settings$Line$lineWidth(1)
-				]),
-			A2(
-				elm$core$List$map,
-				function (ray) {
-					return A2(author$project$Main$renderRay, model, ray);
-				},
-				rayList)),
-			A2(
-			joakin$elm_canvas$Canvas$shapes,
-			_List_fromArray(
-				[
-					joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$blue)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					joakin$elm_canvas$Canvas$circle,
-					_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
-					model.playerRadSize)
-				]))
-		]);
-};
+var author$project$Main$renderPlayer = F2(
+	function (model, rayList) {
+		var _n0 = _Utils_Tuple2((model.playerPos.x * model.mapScale) + model.mapPos.x, (model.playerPos.y * model.mapScale) + model.mapPos.y);
+		var x = _n0.a;
+		var y = _n0.b;
+		return _List_fromArray(
+			[
+				A2(
+				joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$lightBlue),
+						joakin$elm_canvas$Canvas$Settings$Line$lineWidth(1)
+					]),
+				A2(
+					elm$core$List$map,
+					function (ray) {
+						return A2(author$project$Main$renderRay, model, ray);
+					},
+					rayList)),
+				A2(
+				joakin$elm_canvas$Canvas$shapes,
+				_List_fromArray(
+					[
+						joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$blue)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						joakin$elm_canvas$Canvas$circle,
+						_Utils_Tuple2(x, y),
+						model.playerRadSize * model.mapScale)
+					]))
+			]);
+	});
 var elm$html$Html$div = _VirtualDom_node('div');
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
@@ -7495,6 +7563,7 @@ var joakin$elm_canvas$Canvas$toHtml = F3(
 			entities);
 	});
 var author$project$Main$view = function (model) {
+	var rayList = author$project$Main$getRayList(model);
 	var _n0 = model.canvasSize;
 	if (_n0.$ === 'Just') {
 		var dimensions = _n0.a;
@@ -7517,8 +7586,10 @@ var author$project$Main$view = function (model) {
 						elm$core$List$cons,
 						A2(author$project$Main$clearScreen, dimensions.width, dimensions.height),
 						_Utils_ap(
-							author$project$Main$renderMap(model),
-							author$project$Main$renderPlayer(model))))
+							A2(author$project$Main$render3D, model, rayList),
+							_Utils_ap(
+								author$project$Main$renderMap(model),
+								A2(author$project$Main$renderPlayer, model, rayList)))))
 				]));
 	} else {
 		return A2(
