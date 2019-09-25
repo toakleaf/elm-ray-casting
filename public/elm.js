@@ -5161,11 +5161,11 @@ var author$project$Main$init = function (_n0) {
 	return _Utils_Tuple2(
 		{
 			canvasSize: elm$core$Maybe$Nothing,
-			fov: 60,
+			fov: 100,
 			grid: author$project$Main$tileMap,
 			gridDimensions: author$project$Main$getGridDimensions(author$project$Main$tileMap),
 			movement: {dist: 0, rot: 0},
-			numRays: 30,
+			numRays: 60,
 			playerPos: {angle: 0, x: 0, y: 0},
 			playerRadSize: 10,
 			rays: _List_Nil,
@@ -6071,80 +6071,10 @@ var author$project$Main$normalizeDeg = function (ang) {
 	var a = A2(author$project$Main$remainderByFloat, 360, ang);
 	return (a < 0) ? (a + 360) : a;
 };
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
 var elm$core$Basics$pi = _Basics_pi;
 var elm$core$Basics$degrees = function (angleInDegrees) {
 	return (angleInDegrees * elm$core$Basics$pi) / 180;
 };
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Basics$tan = _Basics_tan;
-var elm$core$Debug$log = _Debug_log;
-var author$project$Main$verticalIntercept = F3(
-	function (model, _n0, step) {
-		var x = _n0.x;
-		var y = _n0.y;
-		var angle = _n0.angle;
-		var size = model.tileSize;
-		var col = ((angle > 90) && (angle <= 270)) ? elm$core$Basics$floor((x - 1) / size) : elm$core$Basics$floor(x / size);
-		var _n1 = _Utils_Tuple2(col * size, (col * size) + size);
-		var left = _n1.a;
-		var right = _n1.b;
-		var _n2 = function () {
-			if (step.$ === 'Nothing') {
-				return ((angle > 90) && (angle <= 270)) ? _Utils_Tuple2(
-					left,
-					y - ((x - left) * elm$core$Basics$tan(
-						elm$core$Basics$degrees(angle)))) : A2(
-					elm$core$Debug$log,
-					'New Right',
-					_Utils_Tuple2(
-						right,
-						y + ((right - x) * elm$core$Basics$tan(
-							elm$core$Basics$degrees(angle)))));
-			} else {
-				var tup = step.a;
-				return _Utils_Tuple2(tup.a + x, tup.b + y);
-			}
-		}();
-		var newX = _n2.a;
-		var newY = _n2.b;
-		var nextStep = _Utils_eq(
-			elm$core$Basics$abs(
-				elm$core$Basics$round(newX - x)),
-			elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
-			_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
-		var _n4 = ((angle > 90) && (angle <= 270)) ? A2(
-			elm$core$Debug$log,
-			'Col/Row Left',
-			_Utils_Tuple2(
-				elm$core$Basics$floor((newX - 1) / size),
-				elm$core$Basics$floor(newY / size))) : A2(
-			elm$core$Debug$log,
-			'Col/Row Right',
-			_Utils_Tuple2(
-				elm$core$Basics$floor(newX / size),
-				elm$core$Basics$floor(newY / size)));
-		var newCol = _n4.a;
-		var newRow = _n4.b;
-		return ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || ((angle === 90) || (angle === 270)))))) ? A2(elm$core$Debug$log, 'OUT OF BOUNDS', elm$core$Maybe$Nothing) : ((!_Utils_eq(
-			A2(
-				author$project$Main$tileAtCoords,
-				model.grid,
-				_Utils_Tuple2(newCol, newRow)),
-			elm$core$Maybe$Just(0))) ? A3(
-			elm$core$Debug$log,
-			'RESULT ~~~~~~~',
-			elm$core$Maybe$Just,
-			_Utils_Tuple2(newX, newY)) : A5(
-			elm$core$Debug$log,
-			'REPEAT',
-			author$project$Main$verticalIntercept,
-			model,
-			{angle: angle, x: newX, y: newY},
-			nextStep));
-	});
 var elm$core$Basics$cos = _Basics_cos;
 var elm$core$Basics$sin = _Basics_sin;
 var elm$core$Basics$fromPolar = function (_n0) {
@@ -6328,8 +6258,6 @@ var author$project$Main$update = F2(
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
-				var test = A3(author$project$Main$verticalIntercept, model, model.playerPos, elm$core$Maybe$Nothing);
-				var test2 = A2(elm$core$Debug$log, 'RESULT', test);
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
@@ -6550,6 +6478,192 @@ var author$project$Main$renderMap = function (model) {
 		partialMakeTile,
 		elm$core$List$concat(model.grid));
 };
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var elm$core$Basics$pow = _Basics_pow;
+var elm$core$Basics$sqrt = _Basics_sqrt;
+var author$project$Main$getHypotenuse = F2(
+	function (a, b) {
+		var width = elm$core$Basics$abs(b.a - a.a);
+		var height = elm$core$Basics$abs(b.b - a.b);
+		return elm$core$Basics$sqrt(
+			A2(elm$core$Basics$pow, width, 2) + A2(elm$core$Basics$pow, height, 2));
+	});
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Basics$tan = _Basics_tan;
+var author$project$Main$horizontalIntercept = F3(
+	function (model, _n0, step) {
+		horizontalIntercept:
+		while (true) {
+			var x = _n0.x;
+			var y = _n0.y;
+			var angle = _n0.angle;
+			var size = model.tileSize;
+			var row = ((angle > 0) && (angle <= 180)) ? elm$core$Basics$floor(y / size) : elm$core$Basics$floor((y - 1) / size);
+			var _n1 = _Utils_Tuple2(row * size, (row * size) + size);
+			var top = _n1.a;
+			var bottom = _n1.b;
+			var _n2 = function () {
+				if (step.$ === 'Nothing') {
+					return ((angle > 0) && (angle <= 180)) ? _Utils_Tuple2(
+						x + ((bottom - y) / elm$core$Basics$tan(
+							elm$core$Basics$degrees(angle))),
+						bottom) : _Utils_Tuple2(
+						x - ((y - top) / elm$core$Basics$tan(
+							elm$core$Basics$degrees(angle))),
+						top);
+				} else {
+					var tup = step.a;
+					return _Utils_Tuple2(tup.a + x, tup.b + y);
+				}
+			}();
+			var newX = _n2.a;
+			var newY = _n2.b;
+			var _n4 = ((angle > 0) && (angle <= 180)) ? _Utils_Tuple2(
+				elm$core$Basics$floor(newX / size),
+				elm$core$Basics$floor(newY / size)) : _Utils_Tuple2(
+				elm$core$Basics$floor(newX / size),
+				elm$core$Basics$floor((newY - 1) / size));
+			var newCol = _n4.a;
+			var newRow = _n4.b;
+			var nextStep = _Utils_eq(
+				elm$core$Basics$abs(
+					elm$core$Basics$round(newY - y)),
+				elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
+				_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
+			if ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || ((!angle) || (angle === 180)))))) {
+				return elm$core$Maybe$Nothing;
+			} else {
+				if (!_Utils_eq(
+					A2(
+						author$project$Main$tileAtCoords,
+						model.grid,
+						_Utils_Tuple2(newCol, newRow)),
+					elm$core$Maybe$Just(0))) {
+					return elm$core$Maybe$Just(
+						_Utils_Tuple2(newX, newY));
+				} else {
+					var $temp$model = model,
+						$temp$_n0 = {angle: angle, x: newX, y: newY},
+						$temp$step = nextStep;
+					model = $temp$model;
+					_n0 = $temp$_n0;
+					step = $temp$step;
+					continue horizontalIntercept;
+				}
+			}
+		}
+	});
+var author$project$Main$verticalIntercept = F3(
+	function (model, _n0, step) {
+		verticalIntercept:
+		while (true) {
+			var x = _n0.x;
+			var y = _n0.y;
+			var angle = _n0.angle;
+			var size = model.tileSize;
+			var col = ((angle > 90) && (angle <= 270)) ? elm$core$Basics$floor((x - 1) / size) : elm$core$Basics$floor(x / size);
+			var _n1 = _Utils_Tuple2(col * size, (col * size) + size);
+			var left = _n1.a;
+			var right = _n1.b;
+			var _n2 = function () {
+				if (step.$ === 'Nothing') {
+					return ((angle > 90) && (angle <= 270)) ? _Utils_Tuple2(
+						left,
+						y - ((x - left) * elm$core$Basics$tan(
+							elm$core$Basics$degrees(angle)))) : _Utils_Tuple2(
+						right,
+						y + ((right - x) * elm$core$Basics$tan(
+							elm$core$Basics$degrees(angle))));
+				} else {
+					var tup = step.a;
+					return _Utils_Tuple2(tup.a + x, tup.b + y);
+				}
+			}();
+			var newX = _n2.a;
+			var newY = _n2.b;
+			var nextStep = _Utils_eq(
+				elm$core$Basics$abs(
+					elm$core$Basics$round(newX - x)),
+				elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
+				_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
+			var _n4 = ((angle > 90) && (angle <= 270)) ? _Utils_Tuple2(
+				elm$core$Basics$floor((newX - 1) / size),
+				elm$core$Basics$floor(newY / size)) : _Utils_Tuple2(
+				elm$core$Basics$floor(newX / size),
+				elm$core$Basics$floor(newY / size));
+			var newCol = _n4.a;
+			var newRow = _n4.b;
+			if ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || ((angle === 90) || (angle === 270)))))) {
+				return elm$core$Maybe$Nothing;
+			} else {
+				if (!_Utils_eq(
+					A2(
+						author$project$Main$tileAtCoords,
+						model.grid,
+						_Utils_Tuple2(newCol, newRow)),
+					elm$core$Maybe$Just(0))) {
+					return elm$core$Maybe$Just(
+						_Utils_Tuple2(newX, newY));
+				} else {
+					var $temp$model = model,
+						$temp$_n0 = {angle: angle, x: newX, y: newY},
+						$temp$step = nextStep;
+					model = $temp$model;
+					_n0 = $temp$_n0;
+					step = $temp$step;
+					continue verticalIntercept;
+				}
+			}
+		}
+	});
+var elm$core$Basics$min = F2(
+	function (x, y) {
+		return (_Utils_cmp(x, y) < 0) ? x : y;
+	});
+var author$project$Main$castRay = F2(
+	function (model, origin) {
+		var hitY = A3(author$project$Main$verticalIntercept, model, origin, elm$core$Maybe$Nothing);
+		var vert = function () {
+			if (hitY.$ === 'Nothing') {
+				return _Utils_Tuple2(
+					1 / 0,
+					_Utils_Tuple2(0, 0));
+			} else {
+				var tup = hitY.a;
+				return _Utils_Tuple2(
+					A2(
+						author$project$Main$getHypotenuse,
+						_Utils_Tuple2(origin.x, origin.y),
+						tup),
+					tup);
+			}
+		}();
+		var hitX = A3(author$project$Main$horizontalIntercept, model, origin, elm$core$Maybe$Nothing);
+		var hor = function () {
+			if (hitX.$ === 'Nothing') {
+				return _Utils_Tuple2(
+					1 / 0,
+					_Utils_Tuple2(0, 0));
+			} else {
+				var tup = hitX.a;
+				return _Utils_Tuple2(
+					A2(
+						author$project$Main$getHypotenuse,
+						_Utils_Tuple2(origin.x, origin.y),
+						tup),
+					tup);
+			}
+		}();
+		var isVert = _Utils_cmp(vert.a, hor.a) < 0;
+		return {
+			angle: origin.angle,
+			hit: isVert ? vert.b : hor.b,
+			hitVert: isVert,
+			len: A2(elm$core$Basics$min, hor.a, vert.a)
+		};
+	});
 var joakin$elm_canvas$Canvas$Internal$Canvas$LineTo = function (a) {
 	return {$: 'LineTo', a: a};
 };
@@ -6564,14 +6678,18 @@ var joakin$elm_canvas$Canvas$path = F2(
 	function (startingPoint, segments) {
 		return A2(joakin$elm_canvas$Canvas$Internal$Canvas$Path, startingPoint, segments);
 	});
-var author$project$Main$renderRay = F3(
-	function (model, len, angle) {
-		var _n0 = elm$core$Basics$fromPolar(
+var author$project$Main$renderRay = F2(
+	function (model, _n0) {
+		var angle = _n0.angle;
+		var hit = _n0.hit;
+		var len = _n0.len;
+		var hitVert = _n0.hitVert;
+		var _n1 = elm$core$Basics$fromPolar(
 			_Utils_Tuple2(
 				len,
 				elm$core$Basics$degrees(angle)));
-		var dx = _n0.a;
-		var dy = _n0.b;
+		var dx = _n1.a;
+		var dy = _n1.b;
 		return A2(
 			joakin$elm_canvas$Canvas$path,
 			_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
@@ -6634,19 +6752,24 @@ var joakin$elm_canvas$Canvas$Settings$Line$lineWidth = function (width) {
 };
 var author$project$Main$renderPlayer = function (model) {
 	var stepSize = model.fov / model.numRays;
-	var lineLength = 100;
-	var li = A2(
+	var pos = model.playerPos;
+	var angList = A2(
 		elm$core$List$map,
 		function (n) {
 			return ((model.fov / 2) + model.playerPos.angle) - (stepSize * n);
 		},
 		A2(elm$core$List$range, 0, model.numRays));
-	var _n0 = elm$core$Basics$fromPolar(
-		_Utils_Tuple2(
-			lineLength,
-			elm$core$Basics$degrees(model.playerPos.angle)));
-	var dx = _n0.a;
-	var dy = _n0.b;
+	var rayList = A2(
+		elm$core$List$map,
+		function (ang) {
+			return A2(
+				author$project$Main$castRay,
+				model,
+				_Utils_update(
+					pos,
+					{angle: ang}));
+		},
+		angList);
 	return _List_fromArray(
 		[
 			A2(
@@ -6658,10 +6781,10 @@ var author$project$Main$renderPlayer = function (model) {
 				]),
 			A2(
 				elm$core$List$map,
-				function (n) {
-					return A3(author$project$Main$renderRay, model, lineLength, n);
+				function (ray) {
+					return A2(author$project$Main$renderRay, model, ray);
 				},
-				li)),
+				rayList)),
 			A2(
 			joakin$elm_canvas$Canvas$shapes,
 			_List_fromArray(
@@ -6674,24 +6797,6 @@ var author$project$Main$renderPlayer = function (model) {
 					joakin$elm_canvas$Canvas$circle,
 					_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
 					model.playerRadSize)
-				])),
-			A2(
-			joakin$elm_canvas$Canvas$shapes,
-			_List_fromArray(
-				[
-					joakin$elm_canvas$Canvas$Settings$stroke(avh4$elm_color$Color$blue),
-					joakin$elm_canvas$Canvas$Settings$Line$lineWidth(5)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					joakin$elm_canvas$Canvas$path,
-					_Utils_Tuple2(model.playerPos.x, model.playerPos.y),
-					_List_fromArray(
-						[
-							joakin$elm_canvas$Canvas$lineTo(
-							_Utils_Tuple2(model.playerPos.x + dx, model.playerPos.y + dy))
-						]))
 				]))
 		]);
 };

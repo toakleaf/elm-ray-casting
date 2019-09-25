@@ -50,10 +50,9 @@ type alias Grid =
 
 type alias Ray =
     { angle : Float
-    , hitX : ( Int, Int )
-    , hitY : ( Int, Int )
+    , hit : ( Float, Float )
     , len : Float
-    , wasHitVert : Bool
+    , hitVert : Bool
     }
 
 
@@ -100,8 +99,8 @@ init _ =
       , playerRadSize = 10
       , movement = { dist = 0, rot = 0 }
       , velocity = { dist = 3, rot = 3 }
-      , fov = 60
-      , numRays = 30
+      , fov = 100
+      , numRays = 60
       , rays = []
       , grid = tileMap
       , gridDimensions = getGridDimensions tileMap
@@ -348,13 +347,12 @@ update msg model =
             )
 
         Other ->
-            let
-                test =
-                    verticalIntercept model model.playerPos Nothing
-
-                test2 =
-                    Debug.log "RESULT" test
-            in
+            -- let
+            --     test =
+            --         verticalIntercept model model.playerPos Nothing
+            --     test2 =
+            --         Debug.log "RESULT" test
+            -- in
             ( model, Cmd.none )
 
 
@@ -546,7 +544,7 @@ verticalIntercept model { x, y, angle } step =
                         ( left, y - (x - left) * tan (degrees angle) )
 
                     else
-                        Debug.log "New Right" ( right, y + (right - x) * tan (degrees angle) )
+                        ( right, y + (right - x) * tan (degrees angle) )
 
                 Just tup ->
                     ( Tuple.first tup + x, Tuple.second tup + y )
@@ -554,10 +552,10 @@ verticalIntercept model { x, y, angle } step =
         ( newCol, newRow ) =
             if angle > 90 && angle <= 270 then
                 -- slight offset so we are colliding with propper row as 0 is first index in next row
-                Debug.log "Col/Row Left" ( floor ((newX - 1) / size), floor (newY / size) )
+                ( floor ((newX - 1) / size), floor (newY / size) )
 
             else
-                Debug.log "Col/Row Right" ( floor (newX / size), floor (newY / size) )
+                ( floor (newX / size), floor (newY / size) )
 
         nextStep =
             if abs (round (newX - x)) == round size then
@@ -567,30 +565,71 @@ verticalIntercept model { x, y, angle } step =
                 Nothing
     in
     if newCol < 0 || newCol >= model.gridDimensions.width || newRow < 0 || newRow >= model.gridDimensions.height || angle == 90 || angle == 270 then
-        Debug.log "OUT OF BOUNDS" Nothing
+        Nothing
 
     else if tileAtCoords model.grid ( newCol, newRow ) /= Just 0 then
-        Debug.log "RESULT ~~~~~~~" Just ( newX, newY )
+        Just ( newX, newY )
 
     else
-        Debug.log "REPEAT" verticalIntercept model { x = newX, y = newY, angle = angle } nextStep
+        verticalIntercept model { x = newX, y = newY, angle = angle } nextStep
 
 
+getHypotenuse : ( Float, Float ) -> ( Float, Float ) -> Float
+getHypotenuse a b =
+    let
+        width =
+            abs (Tuple.first b - Tuple.first a)
 
--- castRay : Model -> Position -> Ray
--- castRay model origin =
---     let
---     in
---     { angle = origin.angle
---     , hitX = ( Int, Int )
---     , hitY = ( Int, Int )
---     , len = Float
---     , wasHitVert = Bool
---     }
+        height =
+            abs (Tuple.second b - Tuple.second a)
+    in
+    sqrt (width ^ 2 + height ^ 2)
 
 
-renderRay : Model -> Float -> Float -> Shape
-renderRay model len angle =
+castRay : Model -> Position -> Ray
+castRay model origin =
+    let
+        hitX =
+            horizontalIntercept model origin Nothing
+
+        hitY =
+            verticalIntercept model origin Nothing
+
+        hor =
+            case hitX of
+                Nothing ->
+                    -- 1/0 is infinity in elm
+                    ( 1 / 0, ( 0, 0 ) )
+
+                Just tup ->
+                    ( getHypotenuse ( origin.x, origin.y ) tup, tup )
+
+        vert =
+            case hitY of
+                Nothing ->
+                    -- 1/0 is infinity in elm
+                    ( 1 / 0, ( 0, 0 ) )
+
+                Just tup ->
+                    ( getHypotenuse ( origin.x, origin.y ) tup, tup )
+
+        isVert =
+            Tuple.first vert < Tuple.first hor
+    in
+    { angle = origin.angle
+    , hit =
+        if isVert then
+            Tuple.second vert
+
+        else
+            Tuple.second hor
+    , len = min (Tuple.first hor) (Tuple.first vert)
+    , hitVert = isVert
+    }
+
+
+renderRay : Model -> Ray -> Shape
+renderRay model { angle, hit, len, hitVert } =
     let
         ( dx, dy ) =
             fromPolar ( len, degrees angle )
@@ -606,35 +645,38 @@ renderRay model len angle =
 renderPlayer : Model -> List Renderable
 renderPlayer model =
     let
-        lineLength =
-            100
-
-        ( dx, dy ) =
-            fromPolar ( lineLength, degrees model.playerPos.angle )
+        -- ( dx, dy ) =
+        --     fromPolar ( lineLength, degrees model.playerPos.angle )
+        pos =
+            model.playerPos
 
         stepSize =
             model.fov / toFloat model.numRays
 
-        li =
+        angList =
             List.range 0 model.numRays |> List.map (\n -> model.fov / 2 + model.playerPos.angle - stepSize * toFloat n)
+
+        rayList =
+            List.map (\ang -> castRay model { pos | angle = ang }) angList
     in
     [ shapes
         [ stroke Color.lightBlue
         , lineWidth 1
         ]
-        (List.map (\n -> renderRay model lineLength n) li)
+        (List.map (\ray -> renderRay model ray) rayList)
     , shapes [ fill Color.blue ] [ circle ( model.playerPos.x, model.playerPos.y ) model.playerRadSize ]
-    , shapes
-        [ stroke Color.blue
-        , lineWidth 5
-        ]
-        [ path ( model.playerPos.x, model.playerPos.y )
-            [ lineTo
-                ( model.playerPos.x + dx
-                , model.playerPos.y + dy
-                )
-            ]
-        ]
+
+    -- , shapes
+    --     [ stroke Color.blue
+    --     , lineWidth 5
+    --     ]
+    --     [ path ( model.playerPos.x, model.playerPos.y )
+    --         [ lineTo
+    --             ( model.playerPos.x + dx
+    --             , model.playerPos.y + dy
+    --             )
+    --         ]
+    --     ]
     ]
 
 
