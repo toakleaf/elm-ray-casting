@@ -8,7 +8,7 @@ Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HT
 
 ## Explanation
 
-Usually game design is a very object-oriented endeavour, so I thought it would be a particularly fun challenge to see if I could get ray casting working in a functional language. For a coding interview I had been given a [project to create a 2D grid](https://github.com/toakleaf/elm-demo) to navigate using the language. After whipping that out I decided it'd be a good opportunity to put Elm through it's passes. I quickly found out that Elm has a very limited tool-set for Html5 Canvas and animation, and therefore isn't the most efficient language for this type of thing. However, I had an absolute blast putting this together over about 8 hrs. Even hastily written code looks pretty tidy in Elm.
+Usually game design is a very object-oriented endeavour, so I thought it would be a particularly fun challenge to see if I could get ray casting working in a functional language. For a coding interview I had been given a [project to create a navigable 2D grid](https://github.com/toakleaf/elm-demo) using the language. After whipping that out I decided it'd be a good opportunity to put Elm through it's passes. I quickly found out that Elm has a very limited tool-set for Html5 Canvas and animation, and therefore isn't the most efficient language for this type of thing. However, I had an absolute blast putting this together over about 8 hrs. Even hastily written code looks pretty tidy in Elm.
 
 ## Todo:
 
