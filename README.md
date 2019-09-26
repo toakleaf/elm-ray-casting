@@ -2,7 +2,7 @@
 
 [Live Demo!](https://elm-ray-casting.netlify.com)
 
-Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HTML5 Canvas
+Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HTML5 Canvas.
 
 ## Todo:
 
