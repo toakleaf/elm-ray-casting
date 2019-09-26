@@ -7,11 +7,9 @@ import Canvas exposing (..)
 import Canvas.Settings exposing (..)
 import Canvas.Settings.Advanced exposing (..)
 import Canvas.Settings.Line exposing (..)
-import Canvas.Settings.Text exposing (..)
 import Color
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
-import Html.Lazy exposing (lazy, lazy4)
 import Json.Decode as Decode
 import Task
 
@@ -237,6 +235,58 @@ hasCollision model tups =
     List.map (\t -> tileAtPos model t) tups |> List.any (\a -> a /= Just 0)
 
 
+move : Model -> ( Model, Cmd Msg )
+move model =
+    let
+        { dist, rot } =
+            model.movement
+
+        { x, y, angle } =
+            model.playerPos
+
+        ( dx, dy ) =
+            fromPolar ( dist, degrees (angle + rot) )
+
+        rad =
+            model.playerRadSize
+
+        playerCorners : Float -> Float -> List ( Int, Int )
+        playerCorners posX posY =
+            [ ( floor (posX - rad), floor (posY - rad) ) -- left top
+            , ( ceiling (posX + rad), floor (posY - rad) ) -- right top
+            , ( ceiling (posX + rad), ceiling (posY + rad) ) -- right bottom
+            , ( floor (posX - rad), ceiling (posY + rad) ) -- left bottom
+            ]
+
+        collisionX =
+            hasCollision model (playerCorners (x + dx) y)
+
+        collisionY =
+            hasCollision model (playerCorners x (y + dy))
+    in
+    ( if collisionX && collisionY then
+        { model
+            | playerPos = { x = x, y = y, angle = normalizeDeg (angle + rot) }
+        }
+
+      else if collisionX then
+        { model
+            | playerPos = { x = x, y = y + dy, angle = normalizeDeg (angle + rot) }
+        }
+
+      else if collisionY then
+        { model
+            | playerPos = { x = x + dx, y = y, angle = normalizeDeg (angle + rot) }
+        }
+
+      else
+        { model
+            | playerPos = { x = x + dx, y = y + dy, angle = normalizeDeg (angle + rot) }
+        }
+    , Cmd.none
+    )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
@@ -245,54 +295,11 @@ update msg model =
     in
     case msg of
         Frame _ ->
-            let
-                { x, y, angle } =
-                    model.playerPos
+            if dist == 0 && rot == 0 then
+                ( model, Cmd.none )
 
-                ( dx, dy ) =
-                    fromPolar ( dist, degrees (angle + rot) )
-
-                rad =
-                    model.playerRadSize
-
-                playerCorners : Float -> Float -> List ( Int, Int )
-                playerCorners posX posY =
-                    [ ( floor (posX - rad), floor (posY - rad) ) -- left top
-                    , ( ceiling (posX + rad), floor (posY - rad) ) -- right top
-                    , ( ceiling (posX + rad), ceiling (posY + rad) ) -- right bottom
-                    , ( floor (posX - rad), ceiling (posY + rad) ) -- left bottom
-                    ]
-
-                collisionX =
-                    hasCollision model (playerCorners (x + dx) y)
-
-                collisionY =
-                    hasCollision model (playerCorners x (y + dy))
-            in
-            ( if dist == 0 && rot == 0 then
-                model
-
-              else if collisionX && collisionY then
-                { model
-                    | playerPos = { x = x, y = y, angle = normalizeDeg (angle + rot) }
-                }
-
-              else if collisionX then
-                { model
-                    | playerPos = { x = x, y = y + dy, angle = normalizeDeg (angle + rot) }
-                }
-
-              else if collisionY then
-                { model
-                    | playerPos = { x = x + dx, y = y, angle = normalizeDeg (angle + rot) }
-                }
-
-              else
-                { model
-                    | playerPos = { x = x + dx, y = y + dy, angle = normalizeDeg (angle + rot) }
-                }
-            , Cmd.none
-            )
+            else
+                move model
 
         TurnLeft ->
             ( { model | movement = { dist = dist, rot = model.velocity.rot * -1 } }, Cmd.none )
@@ -354,13 +361,6 @@ update msg model =
             )
 
         Other ->
-            let
-                test =
-                    remainderByFloat (Debug.log "tileSize" (toFloat model.tileSize)) (Debug.log "x" model.playerPos.x)
-
-                test2 =
-                    Debug.log "test" test
-            in
             ( model, Cmd.none )
 
 

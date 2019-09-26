@@ -5801,6 +5801,42 @@ var author$project$Main$subscriptions = function (model) {
 				elm$browser$Browser$Events$onAnimationFrameDelta(author$project$Main$Frame)
 			]));
 };
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var author$project$Main$get2DIndiciesFrom1DList = F2(
+	function (width, index) {
+		var row = (index / width) | 0;
+		var col = index - (row * width);
+		return ((width < 0) || (index < 0)) ? _Utils_Tuple2(-1, -1) : _Utils_Tuple2(col, row);
+	});
+var author$project$Main$indexOfInt = F2(
+	function (num, list) {
+		var helper = F3(
+			function (li, elem, offset) {
+				helper:
+				while (true) {
+					if (!li.b) {
+						return -1;
+					} else {
+						var x = li.a;
+						var xs = li.b;
+						if (_Utils_eq(x, elem)) {
+							return offset;
+						} else {
+							var $temp$li = xs,
+								$temp$elem = elem,
+								$temp$offset = offset + 1;
+							li = $temp$li;
+							elem = $temp$elem;
+							offset = $temp$offset;
+							continue helper;
+						}
+					}
+				}
+			});
+		return A3(helper, list, num, 0);
+	});
 var elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -5812,27 +5848,6 @@ var elm$core$List$append = F2(
 var elm$core$List$concat = function (lists) {
 	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
 };
-var elm$core$List$drop = F2(
-	function (n, list) {
-		drop:
-		while (true) {
-			if (n <= 0) {
-				return list;
-			} else {
-				if (!list.b) {
-					return list;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs;
-					n = $temp$n;
-					list = $temp$list;
-					continue drop;
-				}
-			}
-		}
-	});
 var elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
 		takeReverse:
@@ -5959,6 +5974,38 @@ var elm$core$List$take = F2(
 	function (n, list) {
 		return A3(elm$core$List$takeFast, 0, n, list);
 	});
+var author$project$Main$indiciesOfGrid = F2(
+	function (num, grid) {
+		var width = elm$core$List$length(
+			elm$core$List$concat(
+				A2(elm$core$List$take, 1, grid)));
+		var i = A2(
+			author$project$Main$indexOfInt,
+			num,
+			elm$core$List$concat(grid));
+		return (i < 0) ? _Utils_Tuple2(-1, -1) : A2(author$project$Main$get2DIndiciesFrom1DList, width, i);
+	});
+var elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
 var author$project$Main$tileAtCoords = F2(
 	function (grid, _n0) {
 		var x = _n0.a;
@@ -6022,53 +6069,6 @@ var author$project$Main$hasCollision = F2(
 				},
 				tups));
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var author$project$Main$get2DIndiciesFrom1DList = F2(
-	function (width, index) {
-		var row = (index / width) | 0;
-		var col = index - (row * width);
-		return ((width < 0) || (index < 0)) ? _Utils_Tuple2(-1, -1) : _Utils_Tuple2(col, row);
-	});
-var author$project$Main$indexOfInt = F2(
-	function (num, list) {
-		var helper = F3(
-			function (li, elem, offset) {
-				helper:
-				while (true) {
-					if (!li.b) {
-						return -1;
-					} else {
-						var x = li.a;
-						var xs = li.b;
-						if (_Utils_eq(x, elem)) {
-							return offset;
-						} else {
-							var $temp$li = xs,
-								$temp$elem = elem,
-								$temp$offset = offset + 1;
-							li = $temp$li;
-							elem = $temp$elem;
-							offset = $temp$offset;
-							continue helper;
-						}
-					}
-				}
-			});
-		return A3(helper, list, num, 0);
-	});
-var author$project$Main$indiciesOfGrid = F2(
-	function (num, grid) {
-		var width = elm$core$List$length(
-			elm$core$List$concat(
-				A2(elm$core$List$take, 1, grid)));
-		var i = A2(
-			author$project$Main$indexOfInt,
-			num,
-			elm$core$List$concat(grid));
-		return (i < 0) ? _Utils_Tuple2(-1, -1) : A2(author$project$Main$get2DIndiciesFrom1DList, width, i);
-	});
 var author$project$Main$remainderByFloat = F2(
 	function (denom, numer) {
 		return numer - (denom * elm$core$Basics$floor(numer / denom));
@@ -6090,9 +6090,85 @@ var elm$core$Basics$fromPolar = function (_n0) {
 		radius * elm$core$Basics$cos(theta),
 		radius * elm$core$Basics$sin(theta));
 };
-var elm$core$Debug$log = _Debug_log;
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Main$move = function (model) {
+	var rad = model.playerRadSize;
+	var playerCorners = F2(
+		function (posX, posY) {
+			return _List_fromArray(
+				[
+					_Utils_Tuple2(
+					elm$core$Basics$floor(posX - rad),
+					elm$core$Basics$floor(posY - rad)),
+					_Utils_Tuple2(
+					elm$core$Basics$ceiling(posX + rad),
+					elm$core$Basics$floor(posY - rad)),
+					_Utils_Tuple2(
+					elm$core$Basics$ceiling(posX + rad),
+					elm$core$Basics$ceiling(posY + rad)),
+					_Utils_Tuple2(
+					elm$core$Basics$floor(posX - rad),
+					elm$core$Basics$ceiling(posY + rad))
+				]);
+		});
+	var _n0 = model.movement;
+	var dist = _n0.dist;
+	var rot = _n0.rot;
+	var _n1 = model.playerPos;
+	var x = _n1.x;
+	var y = _n1.y;
+	var angle = _n1.angle;
+	var _n2 = elm$core$Basics$fromPolar(
+		_Utils_Tuple2(
+			dist,
+			elm$core$Basics$degrees(angle + rot)));
+	var dx = _n2.a;
+	var dy = _n2.b;
+	var collisionX = A2(
+		author$project$Main$hasCollision,
+		model,
+		A2(playerCorners, x + dx, y));
+	var collisionY = A2(
+		author$project$Main$hasCollision,
+		model,
+		A2(playerCorners, x, y + dy));
+	return _Utils_Tuple2(
+		(collisionX && collisionY) ? _Utils_update(
+			model,
+			{
+				playerPos: {
+					angle: author$project$Main$normalizeDeg(angle + rot),
+					x: x,
+					y: y
+				}
+			}) : (collisionX ? _Utils_update(
+			model,
+			{
+				playerPos: {
+					angle: author$project$Main$normalizeDeg(angle + rot),
+					x: x,
+					y: y + dy
+				}
+			}) : (collisionY ? _Utils_update(
+			model,
+			{
+				playerPos: {
+					angle: author$project$Main$normalizeDeg(angle + rot),
+					x: x + dx,
+					y: y
+				}
+			}) : _Utils_update(
+			model,
+			{
+				playerPos: {
+					angle: author$project$Main$normalizeDeg(angle + rot),
+					x: x + dx,
+					y: y + dy
+				}
+			}))),
+		elm$core$Platform$Cmd$none);
+};
 var author$project$Main$update = F2(
 	function (msg, model) {
 		var _n0 = model.movement;
@@ -6100,78 +6176,7 @@ var author$project$Main$update = F2(
 		var rot = _n0.rot;
 		switch (msg.$) {
 			case 'Frame':
-				var rad = model.playerRadSize;
-				var playerCorners = F2(
-					function (posX, posY) {
-						return _List_fromArray(
-							[
-								_Utils_Tuple2(
-								elm$core$Basics$floor(posX - rad),
-								elm$core$Basics$floor(posY - rad)),
-								_Utils_Tuple2(
-								elm$core$Basics$ceiling(posX + rad),
-								elm$core$Basics$floor(posY - rad)),
-								_Utils_Tuple2(
-								elm$core$Basics$ceiling(posX + rad),
-								elm$core$Basics$ceiling(posY + rad)),
-								_Utils_Tuple2(
-								elm$core$Basics$floor(posX - rad),
-								elm$core$Basics$ceiling(posY + rad))
-							]);
-					});
-				var _n2 = model.playerPos;
-				var x = _n2.x;
-				var y = _n2.y;
-				var angle = _n2.angle;
-				var _n3 = elm$core$Basics$fromPolar(
-					_Utils_Tuple2(
-						dist,
-						elm$core$Basics$degrees(angle + rot)));
-				var dx = _n3.a;
-				var dy = _n3.b;
-				var collisionX = A2(
-					author$project$Main$hasCollision,
-					model,
-					A2(playerCorners, x + dx, y));
-				var collisionY = A2(
-					author$project$Main$hasCollision,
-					model,
-					A2(playerCorners, x, y + dy));
-				return _Utils_Tuple2(
-					((!dist) && (!rot)) ? model : ((collisionX && collisionY) ? _Utils_update(
-						model,
-						{
-							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + rot),
-								x: x,
-								y: y
-							}
-						}) : (collisionX ? _Utils_update(
-						model,
-						{
-							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + rot),
-								x: x,
-								y: y + dy
-							}
-						}) : (collisionY ? _Utils_update(
-						model,
-						{
-							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + rot),
-								x: x + dx,
-								y: y
-							}
-						}) : _Utils_update(
-						model,
-						{
-							playerPos: {
-								angle: author$project$Main$normalizeDeg(angle + rot),
-								x: x + dx,
-								y: y + dy
-							}
-						})))),
-					elm$core$Platform$Cmd$none);
+				return ((!dist) && (!rot)) ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : author$project$Main$move(model);
 			case 'TurnLeft':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -6239,12 +6244,12 @@ var author$project$Main$update = F2(
 			case 'ScreenSize':
 				var w = msg.a;
 				var h = msg.b;
-				var _n4 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
-				var xZeroed = _n4.a;
-				var yZeroed = _n4.b;
-				var _n5 = _Utils_Tuple2((w / model.gridDimensions.width) | 0, (h / model.gridDimensions.height) | 0);
-				var wide = _n5.a;
-				var tall = _n5.b;
+				var _n2 = A2(author$project$Main$indiciesOfGrid, 0, model.grid);
+				var xZeroed = _n2.a;
+				var yZeroed = _n2.b;
+				var _n3 = _Utils_Tuple2((w / model.gridDimensions.width) | 0, (h / model.gridDimensions.height) | 0);
+				var wide = _n3.a;
+				var tall = _n3.b;
 				var size = (_Utils_cmp(wide * model.gridDimensions.height, h) < 0) ? wide : tall;
 				var halfSize = (size / 2) | 0;
 				return _Utils_Tuple2(
@@ -6270,11 +6275,6 @@ var author$project$Main$update = F2(
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
-				var test = A2(
-					author$project$Main$remainderByFloat,
-					A2(elm$core$Debug$log, 'tileSize', model.tileSize),
-					A2(elm$core$Debug$log, 'x', model.playerPos.x));
-				var test2 = A2(elm$core$Debug$log, 'test', test);
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
