@@ -354,6 +354,13 @@ update msg model =
             )
 
         Other ->
+            let
+                test =
+                    remainderByFloat (Debug.log "tileSize" (toFloat model.tileSize)) (Debug.log "x" model.playerPos.x)
+
+                test2 =
+                    Debug.log "test" test
+            in
             ( model, Cmd.none )
 
 
@@ -434,7 +441,7 @@ horizontalIntercept model { x, y, angle } step =
                 floor (y / size)
 
             else
-                -- slight offset so we are colliding with propper row as 0 is first index in next row
+                -- slight offset so we are colliding with propper row, as 0 is first index in next row
                 floor ((y - 1) / size)
 
         ( top, bottom ) =
@@ -444,7 +451,7 @@ horizontalIntercept model { x, y, angle } step =
             case step of
                 Nothing ->
                     if angle > 0 && angle <= 180 then
-                        -- values account for +/- changes w/ quadrants
+                        -- values account for +/- changes of tan w/ quadrants
                         ( x + (bottom - y) / tan (degrees angle), bottom )
 
                     else
@@ -462,8 +469,8 @@ horizontalIntercept model { x, y, angle } step =
                 ( floor (newX / size), floor ((newY - 1) / size) )
 
         nextStep =
-            if abs y - y /= 0 then
-                -- y will only be whole after first cycle
+            if model.playerPos.y - y /= 0 then
+                -- step should be calculated betwee second and third intercepts, so only return value during recursion
                 Just ( newX - x, newY - y )
 
             else
@@ -500,7 +507,7 @@ verticalIntercept model { x, y, angle } step =
             case step of
                 Nothing ->
                     if angle > 90 && angle <= 270 then
-                        -- values account for +/- changes w/ quadrants
+                        -- values account for +/- changes of tan w/ quadrants
                         ( left, y - (x - left) * tan (degrees angle) )
 
                     else
@@ -518,7 +525,8 @@ verticalIntercept model { x, y, angle } step =
                 ( floor (newX / size), floor (newY / size) )
 
         nextStep =
-            if abs x - x /= 0 then
+            if model.playerPos.x - x /= 0 then
+                -- step should be calculated betwee second and third intercepts, so only return value during recursion
                 Just ( newX - x, newY - y )
 
             else

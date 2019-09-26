@@ -6090,6 +6090,7 @@ var elm$core$Basics$fromPolar = function (_n0) {
 		radius * elm$core$Basics$cos(theta),
 		radius * elm$core$Basics$sin(theta));
 };
+var elm$core$Debug$log = _Debug_log;
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$update = F2(
@@ -6269,6 +6270,11 @@ var author$project$Main$update = F2(
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
+				var test = A2(
+					author$project$Main$remainderByFloat,
+					A2(elm$core$Debug$log, 'tileSize', model.tileSize),
+					A2(elm$core$Debug$log, 'x', model.playerPos.x));
+				var test2 = A2(elm$core$Debug$log, 'test', test);
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
@@ -6489,7 +6495,7 @@ var author$project$Main$horizontalIntercept = F3(
 				elm$core$Basics$floor((newY - 1) / size));
 			var newCol = _n4.a;
 			var newRow = _n4.b;
-			var nextStep = (elm$core$Basics$abs(y) - y) ? elm$core$Maybe$Just(
+			var nextStep = (model.playerPos.y - y) ? elm$core$Maybe$Just(
 				_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
 			if ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || ((!angle) || (angle === 180)))))) {
 				return elm$core$Maybe$Nothing;
@@ -6542,7 +6548,7 @@ var author$project$Main$verticalIntercept = F3(
 			}();
 			var newX = _n2.a;
 			var newY = _n2.b;
-			var nextStep = (elm$core$Basics$abs(x) - x) ? elm$core$Maybe$Just(
+			var nextStep = (model.playerPos.x - x) ? elm$core$Maybe$Just(
 				_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
 			var _n4 = ((angle > 90) && (angle <= 270)) ? _Utils_Tuple2(
 				elm$core$Basics$floor((newX - 1) / size),
