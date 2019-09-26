@@ -462,7 +462,8 @@ horizontalIntercept model { x, y, angle } step =
                 ( floor (newX / size), floor ((newY - 1) / size) )
 
         nextStep =
-            if abs (round (newY - y)) == round size then
+            if abs y - y /= 0 then
+                -- y will only be whole after first cycle
                 Just ( newX - x, newY - y )
 
             else
@@ -517,7 +518,7 @@ verticalIntercept model { x, y, angle } step =
                 ( floor (newX / size), floor (newY / size) )
 
         nextStep =
-            if abs (round (newX - x)) == round size then
+            if abs x - x /= 0 then
                 Just ( newX - x, newY - y )
 
             else

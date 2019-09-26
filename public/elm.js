@@ -6489,10 +6489,7 @@ var author$project$Main$horizontalIntercept = F3(
 				elm$core$Basics$floor((newY - 1) / size));
 			var newCol = _n4.a;
 			var newRow = _n4.b;
-			var nextStep = _Utils_eq(
-				elm$core$Basics$abs(
-					elm$core$Basics$round(newY - y)),
-				elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
+			var nextStep = (elm$core$Basics$abs(y) - y) ? elm$core$Maybe$Just(
 				_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
 			if ((newCol < 0) || ((_Utils_cmp(newCol, model.gridDimensions.width) > -1) || ((newRow < 0) || ((_Utils_cmp(newRow, model.gridDimensions.height) > -1) || ((!angle) || (angle === 180)))))) {
 				return elm$core$Maybe$Nothing;
@@ -6545,10 +6542,7 @@ var author$project$Main$verticalIntercept = F3(
 			}();
 			var newX = _n2.a;
 			var newY = _n2.b;
-			var nextStep = _Utils_eq(
-				elm$core$Basics$abs(
-					elm$core$Basics$round(newX - x)),
-				elm$core$Basics$round(size)) ? elm$core$Maybe$Just(
+			var nextStep = (elm$core$Basics$abs(x) - x) ? elm$core$Maybe$Just(
 				_Utils_Tuple2(newX - x, newY - y)) : elm$core$Maybe$Nothing;
 			var _n4 = ((angle > 90) && (angle <= 270)) ? _Utils_Tuple2(
 				elm$core$Basics$floor((newX - 1) / size),
