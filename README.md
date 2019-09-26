@@ -4,6 +4,10 @@
 
 Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HTML5 Canvas.
 
+## Explanation
+
+I wanted to dive deeper into the Elm language to see how far I could push things.
+
 ## Todo:
 
 1.  ~~Setup canvas~~
