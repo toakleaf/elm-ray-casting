@@ -15,4 +15,4 @@ Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HT
 7.  ~~Calculate FOV rays~~
 8.  ~~Calculate ray collisions~~
 9.  ~~2D += D~~
-10. Color floor/ceiling?
+10. ~~Color floor/ceiling~~

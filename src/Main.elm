@@ -114,7 +114,7 @@ init _ =
       , mapScale = 0.25
       , wallScale = 0.6
       , wallHeight = 32
-      , sliceWidth = 3
+      , sliceWidth = 2
       , canvasSize = Nothing
       , screenSize = Nothing
       }
@@ -629,14 +629,14 @@ renderPlayer model rayList =
         , lineWidth 1
         ]
         (List.map (\ray -> renderRay model ray) rayList)
-    , shapes [ fill Color.blue ] [ circle ( x, y ) (model.playerRadSize * model.mapScale) ]
+    , shapes [ fill (Color.rgb255 0 102 0) ] [ circle ( x, y ) (model.playerRadSize * model.mapScale) ]
     ]
 
 
 render3D : Model -> List Ray -> List Renderable
 render3D model rayList =
     let
-        slice : Int -> Ray -> Renderable
+        slice : Int -> Ray -> List Renderable
         slice index { len, hitVert, angle } =
             let
                 ( canvasW, canvasH ) =
@@ -656,17 +656,40 @@ render3D model rayList =
                 height =
                     toFloat model.wallHeight / unskewedRayLength * distToProjPlane
 
-                alpha =
+                alphaWall =
                     170 / unskewedRayLength
 
-                color =
+                wallColor =
                     if hitVert then
-                        Color.rgba 0.969 0.949 0.925 alpha
+                        Color.rgba 0.969 0.949 0.925 alphaWall
 
                     else
-                        Color.rgba 0.925 0.871 0.816 alpha
+                        Color.rgba 0.925 0.871 0.816 alphaWall
+
+                floorColor =
+                    Color.rgba 0.2 0.2 0.2 alphaWall
+
+                ceilingColor =
+                    Color.rgba 0.859 0.941 0.976 1
             in
-            shapes [ fill color ]
+            [ shapes [ fill floorColor ]
+                [ rect
+                    ( toFloat index * model.sliceWidth
+                    , canvasH / 2 - height / 2
+                    )
+                    model.sliceWidth
+                    ((canvasH - height) / 2)
+                ]
+
+            -- , shapes [ fill ceilingColor ]
+            --     [ rect
+            --         ( toFloat index * model.sliceWidth
+            --         , 0
+            --         )
+            --         model.sliceWidth
+            --         ((canvasH + height) / 2)
+            -- ]
+            , shapes [ fill wallColor ]
                 [ rect
                     ( toFloat index * model.sliceWidth
                     , canvasH / 2 - height / 2
@@ -674,8 +697,9 @@ render3D model rayList =
                     model.sliceWidth
                     height
                 ]
+            ]
     in
-    List.indexedMap slice (List.reverse rayList)
+    List.indexedMap slice (List.reverse rayList) |> List.concat
 
 
 makeTile : Float -> Position -> Model -> Int -> Int -> Renderable
@@ -687,7 +711,7 @@ makeTile scale offset model index tileType =
                     Color.white
 
                 1 ->
-                    Color.red
+                    Color.darkBlue
 
                 _ ->
                     Color.blue

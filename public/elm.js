@@ -5173,7 +5173,7 @@ var author$project$Main$init = function (_n0) {
 			playerPos: {angle: 0, x: 0, y: 0},
 			playerRadSize: 10,
 			screenSize: elm$core$Maybe$Nothing,
-			sliceWidth: 3,
+			sliceWidth: 2,
 			tileSize: 32,
 			velocity: {dist: 3, rot: 2},
 			wallHeight: 32,
@@ -6663,8 +6663,10 @@ var author$project$Main$render3D = F2(
 				var angle = _n2.angle;
 				var unskewedRayLength = len * elm$core$Basics$cos(
 					elm$core$Basics$degrees(angle) - elm$core$Basics$degrees(model.playerPos.angle));
-				var alpha = 170 / unskewedRayLength;
-				var color = hitVert ? A4(avh4$elm_color$Color$rgba, 0.969, 0.949, 0.925, alpha) : A4(avh4$elm_color$Color$rgba, 0.925, 0.871, 0.816, alpha);
+				var ceilingColor = A4(avh4$elm_color$Color$rgba, 0.859, 0.941, 0.976, 1);
+				var alphaWall = 170 / unskewedRayLength;
+				var floorColor = A4(avh4$elm_color$Color$rgba, 0.2, 0.2, 0.2, alphaWall);
+				var wallColor = hitVert ? A4(avh4$elm_color$Color$rgba, 0.969, 0.949, 0.925, alphaWall) : A4(avh4$elm_color$Color$rgba, 0.925, 0.871, 0.816, alphaWall);
 				var _n0 = function () {
 					var _n1 = model.canvasSize;
 					if (_n1.$ === 'Nothing') {
@@ -6678,28 +6680,46 @@ var author$project$Main$render3D = F2(
 				var canvasH = _n0.b;
 				var distToProjPlane = (canvasW / 2) / elm$core$Basics$tan(model.fov / 2);
 				var height = (model.wallHeight / unskewedRayLength) * distToProjPlane;
-				return A2(
-					joakin$elm_canvas$Canvas$shapes,
-					_List_fromArray(
-						[
-							joakin$elm_canvas$Canvas$Settings$fill(color)
-						]),
-					_List_fromArray(
-						[
-							A3(
-							joakin$elm_canvas$Canvas$rect,
-							_Utils_Tuple2(index * model.sliceWidth, (canvasH / 2) - (height / 2)),
-							model.sliceWidth,
-							height)
-						]));
+				return _List_fromArray(
+					[
+						A2(
+						joakin$elm_canvas$Canvas$shapes,
+						_List_fromArray(
+							[
+								joakin$elm_canvas$Canvas$Settings$fill(floorColor)
+							]),
+						_List_fromArray(
+							[
+								A3(
+								joakin$elm_canvas$Canvas$rect,
+								_Utils_Tuple2(index * model.sliceWidth, (canvasH / 2) - (height / 2)),
+								model.sliceWidth,
+								(canvasH - height) / 2)
+							])),
+						A2(
+						joakin$elm_canvas$Canvas$shapes,
+						_List_fromArray(
+							[
+								joakin$elm_canvas$Canvas$Settings$fill(wallColor)
+							]),
+						_List_fromArray(
+							[
+								A3(
+								joakin$elm_canvas$Canvas$rect,
+								_Utils_Tuple2(index * model.sliceWidth, (canvasH / 2) - (height / 2)),
+								model.sliceWidth,
+								height)
+							]))
+					]);
 			});
-		return A2(
-			elm$core$List$indexedMap,
-			slice,
-			elm$core$List$reverse(rayList));
+		return elm$core$List$concat(
+			A2(
+				elm$core$List$indexedMap,
+				slice,
+				elm$core$List$reverse(rayList)));
 	});
 var avh4$elm_color$Color$blue = A4(avh4$elm_color$Color$RgbaSpace, 52 / 255, 101 / 255, 164 / 255, 1.0);
-var avh4$elm_color$Color$red = A4(avh4$elm_color$Color$RgbaSpace, 204 / 255, 0 / 255, 0 / 255, 1.0);
+var avh4$elm_color$Color$darkBlue = A4(avh4$elm_color$Color$RgbaSpace, 32 / 255, 74 / 255, 135 / 255, 1.0);
 var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var joakin$elm_canvas$Canvas$Settings$stroke = function (color) {
 	return joakin$elm_canvas$Canvas$Internal$Canvas$SettingDrawOp(
@@ -6712,7 +6732,7 @@ var author$project$Main$makeTile = F5(
 				case 0:
 					return avh4$elm_color$Color$white;
 				case 1:
-					return avh4$elm_color$Color$red;
+					return avh4$elm_color$Color$darkBlue;
 				default:
 					return avh4$elm_color$Color$blue;
 			}
@@ -6785,6 +6805,18 @@ var author$project$Main$renderRay = F2(
 				]));
 	});
 var avh4$elm_color$Color$lightBlue = A4(avh4$elm_color$Color$RgbaSpace, 114 / 255, 159 / 255, 207 / 255, 1.0);
+var avh4$elm_color$Color$scaleFrom255 = function (c) {
+	return c / 255;
+};
+var avh4$elm_color$Color$rgb255 = F3(
+	function (r, g, b) {
+		return A4(
+			avh4$elm_color$Color$RgbaSpace,
+			avh4$elm_color$Color$scaleFrom255(r),
+			avh4$elm_color$Color$scaleFrom255(g),
+			avh4$elm_color$Color$scaleFrom255(b),
+			1.0);
+	});
 var joakin$elm_canvas$Canvas$Internal$Canvas$Circle = F2(
 	function (a, b) {
 		return {$: 'Circle', a: a, b: b};
@@ -6859,7 +6891,8 @@ var author$project$Main$renderPlayer = F2(
 				joakin$elm_canvas$Canvas$shapes,
 				_List_fromArray(
 					[
-						joakin$elm_canvas$Canvas$Settings$fill(avh4$elm_color$Color$blue)
+						joakin$elm_canvas$Canvas$Settings$fill(
+						A3(avh4$elm_color$Color$rgb255, 0, 102, 0))
 					]),
 				_List_fromArray(
 					[
