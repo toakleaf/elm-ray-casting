@@ -4,7 +4,7 @@
 
 Building a ray casting 2D to 3D projector (a la Wolfenstein 3D) using Elm and HTML5 Canvas.
 
-![Elm Ray Casting Screenshot](/screenshot.jpg 'Ray Casting 2D grid to 3D')
+![Elm Ray Casting Screenshot](/ScreenShot.jpg 'Ray Casting 2D grid to 3D')
 
 ## Explanation
 
